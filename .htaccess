@@ -1,18 +1,13 @@
-# Known .htaccess file
-# If these settings don't work for you, we recommend copying htaccess-2.4.dist instead.
+# Apache config for version 2.4
 
 <IfModule mod_rewrite.c>
     RewriteEngine on
-    #RewriteBase /
-
-    RewriteCond %{ENV:BASE} ^$
-    RewriteCond $1::%{REQUEST_URI} ^(.*)::(.*?)\1$
-    RewriteRule ^(.*)$ - [ENV=BASE:%2]
-
-    RewriteRule ^js/canary\.js$ %{ENV:BASE}/js/default.js [L]
+    RewriteRule ^(\.well\-known.*)$ /index.php/$1 [L]
+    RewriteRule ^\..* - [F]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ %{ENV:BASE}/index.php?/$1 [L,QSA]
+    RewriteCond $1 !^(index\.php)
+    RewriteRule ^(.*)$ /index.php/$1 [L]
     RewriteRule ^Uploads.* - [F]
 </IfModule>
 <IfModule mod_php5.c>
@@ -20,20 +15,16 @@
     php_value post_max_size 1080M
 </IfModule>
 <Files  ~ "\.dist$">
-  Order allow,deny
-  Deny from all
+  Require all denied
 </Files>
 <Files  ~ "\.ini$">
-  Order allow,deny
-  Deny from all
+  Require all denied
 </Files>
 <Files ~ "\.xml$">
-  Order allow,deny
-  Deny from all
+  Require all denied
 </Files>
 <Files ~ "sitemap.xml">
-  Order allow,deny
-  Allow from all
+  Require all granted
 </Files>
 
 AddType video/ogg .ogv
