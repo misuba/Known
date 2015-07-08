@@ -14,7 +14,6 @@
     if (!empty(\Idno\Core\site()->config()->lang))
         $lang = \Idno\Core\site()->config()->lang;
 ?>
-<?php if (!$_SERVER["HTTP_X_PJAX"]): ?>
 <!DOCTYPE html>
 <html lang="<?= $lang; ?>">
 <head>
@@ -128,11 +127,22 @@
 
     ?>
 
+    <!-- We need jQuery at the top of the page -->
+    <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/jquery/' ?>jquery.min.js"></script>
+
     <!-- Le styles -->
-    <link href="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/bootstrap/' ?>assets/css/bootstrap.css"
-          rel="stylesheet">
+    <link href="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/bootstrap/' ?>assets/css/bootstrap.min.css"
+          rel="stylesheet" />
+    <link href="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/bootstrap/' ?>assets/css/bootstrap-theme.min.css" />
+    <script src="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/bootstrap/' ?>assets/js/bootstrap.min.js"></script>
+
+    <!-- Accessibility -->
+    <link rel="stylesheet" href="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/paypal-bootstrap-accessibility-plugin/' ?>plugins/css/bootstrap-accessibility_1.0.3.css">
+    <script  src="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/paypal-bootstrap-accessibility-plugin/' ?>plugins/js/bootstrap-accessibility_1.0.3.min.js"></script>
+
+    <!-- Fonts -->
     <link rel="stylesheet"
-          href="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/fontello/css/known-fontello.css">
+          href="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/font-awesome/css/font-awesome.css">
     <!--<link rel="stylesheet"
           href="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/font-awesome/css/font-awesome.min.css">-->
     <style>
@@ -140,19 +150,14 @@
             padding-top: 100px; /* 60px to make the container go all the way to the bottom of the topbar */
         }
     </style>
-    <link
-        href="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/bootstrap/' ?>assets/css/bootstrap-responsive.css"
-        rel="stylesheet">
-    <link href="<?= \Idno\Core\site()->config()->getStaticURL() ?>css/default.css?20150123" rel="stylesheet">
+    
+    <?=$this->draw('shell/css');?>
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
     <script
         src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/bootstrap/' ?>assets/js/html5shiv.js"></script>
     <![endif]-->
-
-    <!-- We need jQuery at the top of the page -->
-    <script src="<?= \Idno\Core\site()->config()->getStaticURL() . 'external/jquery/' ?>jquery.min.js"></script>
 
     <!-- Default Known JavaScript -->
     <script src="<?= \Idno\Core\site()->config()->getStaticURL() . 'js/default.js?20150406' ?>"></script>
@@ -193,10 +198,10 @@
 
     <!-- Syndication -->
     <link
-        href="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/bootstrap-toggle/css/bootstrap2-toggle.min.css"
+        href="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/bootstrap-toggle/css/bootstrap-toggle.min.css"
         rel="stylesheet"/>
     <script
-        src="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/bootstrap-toggle/js/bootstrap2-toggle.js"></script>
+        src="<?= \Idno\Core\site()->config()->getStaticURL() ?>external/bootstrap-toggle/js/bootstrap-toggle.js"></script>
 
     <?= $this->draw('shell/head', $vars); ?>
 
@@ -219,9 +224,13 @@
             }
         }
     }
+    if (\Idno\Core\site()->session()->isLoggedIn()) {
+        echo ' logged-in';
+    } else {
+        echo ' logged-out';
+    }
 
 ?>">
-<?php endif; ?>
 <div id="pjax-container" class="page-container">
     <?php
         $currentPage = \Idno\Core\site()->currentPage();
@@ -230,53 +239,9 @@
             $hidenav = \Idno\Core\site()->embedded(); //\Idno\Core\site()->currentPage()->getInput('hidenav');
         }
         if (empty($vars['hidenav']) && empty($hidenav)) {
-            ?>
-            <div class="navbar navbar-inverse navbar-fixed-top">
-                <div class="navbar-inner">
-                    <div class="container">
-                        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                        <a class="brand"
-                           href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>"><?=
-                                // \Idno\Core\site()->config()->title
-                                $this->draw('shell/toolbar/title')
-                            ?></a>
 
-                        <div class="nav-collapse collapse">
-                            <?php
-                                if (\Idno\Core\site()->config()->isPublicSite() || \Idno\Core\site()->session()->isLoggedOn()) {
-                                    echo $this->draw('shell/toolbar/search');
+            echo $this->draw('shell/toolbar/main');
 
-                                    echo $this->draw('shell/toolbar/content');
-                                }
-                            ?>
-                            <ul class="nav pull-right" role="menu">
-                                <?php
-
-                                    echo $this->draw('shell/toolbar/links');
-
-                                    if (\Idno\Core\site()->session()->isLoggedIn()) {
-
-                                        echo $this->draw('shell/toolbar/logged-in');
-
-                                    } else {
-
-                                        echo $this->draw('shell/toolbar/logged-out');
-
-                                    }
-
-                                ?>
-                            </ul>
-                        </div>
-                        <!--/.nav-collapse -->
-                    </div>
-                </div>
-            </div>
-
-        <?php
         } else {
 
             ?>
@@ -287,7 +252,7 @@
     ?>
 
     <div class="container page-body">
-
+        <a name="pagecontent"></a>
         <?php
 
             if (!empty($messages)) {
@@ -295,7 +260,7 @@
 
                     ?>
 
-                    <div class="alert <?= $message['message_type'] ?>">
+                    <div class="alert <?= $message['message_type'] ?> col-md-10 col-md-offset-1">
                         <button type="button" class="close" data-dismiss="alert">&times;</button>
                         <?= $message['message'] ?>
                     </div>
@@ -324,8 +289,6 @@
 <script
     src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/jquery-timeago/' ?>jquery.timeago.js"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/jquery-pjax/' ?>jquery.pjax.js"></script>
-<script
-    src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/bootstrap/' ?>assets/js/bootstrap.min.js"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/underscore/underscore-min.js' ?>"
         type="text/javascript"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/bootstrap-typeahead.js' ?>"
@@ -419,6 +382,35 @@
                 }
             });
         });
+
+        $('body').on('click', function (event, el) {
+            var clickTarget = event.target;
+
+            if (clickTarget.href && clickTarget.href.indexOf(window.location.origin) === -1) {
+                clickTarget.target = "_blank";
+            }
+        });
+    });
+    
+    /**
+     * Handle Soundcloud oEmbed code
+     */
+    $(document).ready(function() {
+	$('div.soundcloud-embed').each(function(index) {
+	    var url = $(this).attr('data-url');
+	    var div = $(this);
+	    
+	    $.getJSON('https://soundcloud.com/oembed?callback=?',
+		    {
+			format: 'js',
+			url: url,
+			iframe: true
+		    },
+		function(data) {
+		    div.html(data['html']);
+		}
+	    );
+	});
     });
 
     /**
@@ -448,5 +440,7 @@
 <?= $this->draw('shell/footer', $vars) ?>
 
 </body>
+
+
 </html>
 <?php endif; ?>
