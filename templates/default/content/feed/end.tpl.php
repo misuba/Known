@@ -19,48 +19,47 @@
         </div>
         <div class="interactions">
             <?php
-            if ($posse = $item->getPosseLinks()) {
+                if ($posse = $item->getPosseLinks()) {
 
-                ?>
-                <div class="posse">
-                    <a name="posse"></a>
+                    ?>
+                    <div class="posse">
+                        <a name="posse"></a>
 
-                    <p>
-                        Also on:
-                        <?php
+                        <p>
+                            Also on:
+                            <?php
 
-                            foreach ($posse as $service => $url) {
-                                echo '<a href="' . $url . '" rel="syndication" class="u-syndication ' . $service . '">' . $service . '</a> ';
-                            }
+                                foreach ($posse as $service => $url) {
+                                    echo '<a href="' . $url . '" rel="syndication" class="u-syndication ' . $service . '">' . $service . '</a> ';
+                                }
 
-                        ?>
-                    </p>
-                </div>
-            <?php
+                            ?>
+                        </p>
+                    </div>
+                <?php
 
-            }
-
-            if (!$has_liked) {
-                $heart_only = '<i class="icon-star-empty"></i>';
-            } else {
-                $heart_only = '<i class="icon-star"></i>';
-            }
-            if ($likes == 1) {
-                $heart_text = '1 star';
-            } else {
-                $heart_text = $likes . ' stars';
-            }
-            $heart = $heart_only . ' ' . $heart_text;
-            if (\Idno\Core\site()->session()->isLoggedOn()) {
-                echo \Idno\Core\site()->actions()->createLink(\Idno\Core\site()->config()->getDisplayURL() . 'annotation/post', $heart_only, array('type' => 'like', 'object' => $item->getUUID()), array('method' => 'POST', 'class' => 'stars'));
-                ?>
-                <a class="stars" href="<?= $item->getDisplayURL() ?>#comments"><?= $heart_text ?></a>
-            <?php
-            } else {
-                ?>
-                <a class="stars" href="<?= $item->getDisplayURL() ?>#comments"><?= $heart ?></a>
-            <?php
-            }
+                }
+                if (!$has_liked) {
+                    $heart_only = '<i class="fa fa-star-o"></i>';
+                } else {
+                    $heart_only = '<i class="fa fa-star"></i>';
+                }
+                if ($likes == 1) {
+                    $heart_text = '1 star';
+                } else {
+                    $heart_text = $likes . ' stars';
+                }
+                $heart = $heart_only . ' ' . $heart_text;
+                if (\Idno\Core\site()->session()->isLoggedOn()) {
+                    echo \Idno\Core\site()->actions()->createLink(\Idno\Core\site()->config()->getDisplayURL() . 'annotation/post', $heart_only, array('type' => 'like', 'object' => $vars['object']->getUUID()), array('method' => 'POST', 'class' => 'stars'));
+                    ?>
+                    <a class="stars" href="<?= $vars['object']->getDisplayURL() ?>#comments"><?= $heart_text ?></a>
+                <?php
+                } else {
+                    ?>
+                    <a class="stars" href="<?= $vars['object']->getDisplayURL() ?>#comments"><?= $heart ?></a>
+                <?php
+                }
             ?>
 
             <a class="comments" href="<?= $item->getDisplayURL() ?>#comments"><i class="icon-comments"></i> <?php
@@ -73,11 +72,11 @@
                     }
 
                 ?></a>
-            <a class="shares" href="<?= $item->getDisplayURL() ?>#comments"><?php if ($shares = $item->countAnnotations('share')) {
-                    echo '<i class="icon-arrows-cw"></i> ' . $shares;
+            <a class="shares" href="<?= $vars['object']->getDisplayURL() ?>#comments"><?php if ($shares = $vars['object']->countAnnotations('share')) {
+                    echo '<i class="fa fa-retweet"></i> ' . $shares;
                 } ?></a>
-            <a class="shares" href="<?= $item->getDisplayURL() ?>#comments"><?php if ($rsvps = $item->countAnnotations('rsvp')) {
-                    echo '<i class="icon-calendar-empty"></i> ' . $rsvps;
+            <a class="shares" href="<?= $vars['object']->getDisplayURL() ?>#comments"><?php if ($rsvps = $vars['object']->countAnnotations('rsvp')) {
+                    echo '<i class="fa fa-calendar-o"></i> ' . $rsvps;
                 } ?></a>
         </div>
         <br clear="all"/>

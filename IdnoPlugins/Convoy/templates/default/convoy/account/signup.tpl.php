@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="span10 offset1">
+    <div class="col-lg-10 col-lg-offset-1">
 
         <?= $this->draw('account/menu') ?>
 
@@ -18,7 +18,7 @@
             Connect to Twitter, Facebook, LinkedIn, Flickr and more - instantly.
         </p>
         <p>
-            <a href="https://withknown.com/convoy/?domain=<?=\Idno\Core\site()->config()->host?>" class="btn btn-primary" style="font-size: 1.3em; padding: 0.6em">Get started</a>
+            <a href="https://withknown.com/convoy/?domain=<?=\Idno\Core\site()->config()->host?>" class="btn btn-primary">Get started</a>
         </p>
 
     </div>
