@@ -49,6 +49,26 @@
             </p>
         </div>
         <div class="interactions">
+            if ($posse = $vars['object']->getPosseLinks()) {
+
+                ?>
+                <div class="posse">
+                    <a name="posse"></a>
+
+                    <p>
+                        Also on:
+                        <?php
+
+                            foreach ($posse as $service => $url) {
+                                echo '<a href="' . $url . '" rel="syndication" class="u-syndication ' . $service . '">' . $service . '</a> ';
+                            }
+
+                        ?>
+                    </p>
+                </div>
+            <?php
+            }
+            ?>
 	        <span class="annotate-icon">
             <?php
                 if (!$has_liked) {
