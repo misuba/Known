@@ -41,9 +41,9 @@
             }
 
             if (!$has_liked) {
-                $heart_only = '<i class="icon-star-empty"></i>';
+                $heart_only = '<i class="fa fa-star-o"></i>';
             } else {
-                $heart_only = '<i class="icon-star"></i>';
+                $heart_only = '<i class="fa fa-star"></i>';
             }
             if ($likes == 1) {
                 $heart_text = '1 star';

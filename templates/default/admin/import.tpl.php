@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="span10 offset1">
+    <div class="col-md-10 col-md-offset-1">
         <?php
 
             echo $this->draw('admin/menu');
@@ -58,8 +58,8 @@
                 Blogger
             </h2>
             <p>
-                Upload a Blogger XML file and turn it into Known posts.
-                <small><a href="#" onclick="$('#blogger-explanation').show(); return false;">How do I get my Blogger XML file?</a></small>
+                Upload a Blogger XML file and turn it into Known posts.</p>
+                <p><a href="#" onclick="$('#blogger-explanation').show(); return false;">How do I get my Blogger XML file?</a>
             </p>
             <div id="blogger-explanation" class="well" style="display:none">
                 <p>
@@ -77,7 +77,7 @@
                 <label>
                     <span class="btn btn-primary btn-file" id="blogger-filename-wrapper">
                         <span id="blogger-filename">Select your Blogger export file</span> <input type="file" name="import" id="blogger-file"
-                                                                                                           class="span9"
+                                                                                                           class="col-md-9"
                                                                                                            accept=".xml,.atom"
                                                                                                            onchange="$('#blogger-filename').html($('#blogger-file').val()); $('#blogger-filename-wrapper').css('background-color','#aaa'); $('#blogger-filename-wrapper').css('border','0'); $('#blogger-submit').show(); $('#blogger-submit').addClass('btn-primary')"/>
 

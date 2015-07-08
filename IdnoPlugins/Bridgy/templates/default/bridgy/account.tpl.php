@@ -1,6 +1,6 @@
 <div class="row">
 
-    <div class="span10 offset1">
+    <div class="col-md-10 col-md-offset-1">
 
         <?= $this->draw('account/menu') ?>
         <h1>Social Interactions</h1>
@@ -8,7 +8,7 @@
 
     </div>
 
-    <div class="span10 offset1">
+    <div class="col-md-10 col-md-offset-1">
 
         <p class="explanation">
             <a href="https://www.brid.gy">Bridgy</a> is a service that pulls social interactions - such as likes and
@@ -26,9 +26,9 @@
 </div>
 <div class="row" id="account-area">
 
-    <div class="span6 offset1">
+        <div class="col-md-6 col-md-offset-1">
         <?php if ($vars['facebook_enabled']) { ?>
-        <form action="https://www.brid.gy/delete/start" method="post">
+            <form action="https://www.brid.gy/facebook/start?feature=listen&callback=<?=urlencode(\Idno\Core\site()->config()->getDisplayURL() . 'account/bridgy/')?>" method="post">
             <input type="hidden" name="feature" value="listen"></input>
             <input type="hidden" name="key" value="<?=$vars['facebook_key']?>"></input>
             <input type="hidden" name="callback" value="<?=\Idno\Core\site()->config()->getDisplayURL() . 'account/bridgy/disabled/?service=facebook'?>">
@@ -44,7 +44,8 @@
             <input type="hidden" name="feature" value="listen"></input>
             <input type="hidden" name="callback" value="<?=\Idno\Core\site()->config()->getDisplayURL() . 'account/bridgy/enabled/?service=facebook'?>">
             <p>
-                <button class="connect fb">Activate Facebook + Bridgy</button>
+                <button class="connect fb">
+                Activate Facebook + Bridgy</button>
             </p>
             <p>
                 Bridgy pulls in comments and likes from Facebook.
@@ -69,7 +70,8 @@
             <input type="hidden" name="feature" value="listen"></input>
             <input type="hidden" name="callback" value="<?=\Idno\Core\site()->config()->getDisplayURL() . 'account/bridgy/enabled/?service=twitter'?>">
             <p>
-                <button class="connect tw">Activate Twitter + Bridgy</button>
+                <button class="connect tw">
+                Activate Twitter + Bridgy</button>
             </p>
             <p>
                 Bridgy pulls in replies, favorites, and retweets from Twitter.

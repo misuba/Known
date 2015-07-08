@@ -99,8 +99,9 @@
              * Performs some administration functions and hands off to
              * getContent().
              */
-            function get()
+            function get($params = array())
             {
+
                 \Idno\Core\site()->session()->publicGatekeeper();
 
                 \Idno\Core\site()->template()->autodetectTemplateType();
@@ -816,8 +817,9 @@
             {
 
                 if ($headers = $this->getallheaders()) {
-                    if (!empty($headers['Accept']))
+                    if (!empty($headers['Accept'])) {
                         if (substr_count($headers['Accept'], $contentType)) return true;
+                    }
                 }
 
                 return false;
@@ -908,8 +910,9 @@
                 $url         = parse_url(\Idno\Core\site()->config()->url);
                 $url['path'] = $_SERVER['REQUEST_URI'];
 
-                if ($tokenise)
+                if ($tokenise) {
                     return $url;
+                }
 
                 return self::buildUrl($url);
             }
