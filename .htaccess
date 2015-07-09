@@ -1,13 +1,17 @@
-# Apache config for version 2.4
+# Known .htaccess file
+# If these settings don't work for you, we recommend copying htaccess-2.4.dist instead.
 
 <IfModule mod_rewrite.c>
     RewriteEngine on
-    RewriteRule ^(\.well\-known.*)$ /index.php/$1 [L]
-    RewriteRule ^\..* - [F]
+    #RewriteBase /
+
+    RewriteCond %{ENV:BASE} ^$
+    RewriteCond $1::%{REQUEST_URI} ^(.*)::(.*?)\1$
+    RewriteRule ^(.*)$ - [ENV=BASE:%2]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond $1 !^(index\.php)
-    RewriteRule ^(.*)$ /index.php/$1 [L]
+    RewriteRule ^(.*)$ %{ENV:BASE}/index.php?/$1 [L,QSA]
     RewriteRule ^Uploads.* - [F]
 </IfModule>
 <IfModule mod_php5.c>
@@ -15,16 +19,20 @@
     php_value post_max_size 1080M
 </IfModule>
 <Files  ~ "\.dist$">
-  Require all denied
+  Order allow,deny
+  Deny from all
 </Files>
 <Files  ~ "\.ini$">
-  Require all denied
+  Order allow,deny
+  Deny from all
 </Files>
 <Files ~ "\.xml$">
-  Require all denied
+  Order allow,deny
+  Deny from all
 </Files>
 <Files ~ "sitemap.xml">
-  Require all granted
+  Order allow,deny
+  Allow from all
 </Files>
 
 AddType video/ogg .ogv
