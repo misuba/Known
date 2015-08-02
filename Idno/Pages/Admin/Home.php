@@ -28,16 +28,18 @@
             function postContent()
             {
                 $this->adminGatekeeper(); // Admins only
-                $title       = $this->getInput('title');
-                $description = $this->getInput('description');
-                $url         = rtrim($this->getInput('url'), ' /') . '/';
-                $path        = dirname(dirname(dirname(dirname(__FILE__)))); // Path is more safely derived from install location
+                $title         = $this->getInput('title');
+                $homepagetitle = $this->getInput('homepagetitle');
+                $description   = $this->getInput('description');
+                $url           = rtrim($this->getInput('url'), ' /') . '/';
+                $path          = dirname(dirname(dirname(dirname(__FILE__)))); // Path is more safely derived from install location
                 if (!empty($url)) {
                     $host = parse_url($url, PHP_URL_HOST); // Host can be safely derived from URL
                 }
                 $hub                  = $this->getInput('hub'); // PuSH hub
                 $open_registration    = $this->getInput('open_registration');
-                $walled_garden        = $this->getInput('walled_garden'); // Private site?
+                $walled_garden        = $this->getInput('walled_garden');
+                $show_privacy         = $this->getInput('show_privacy');
                 $indieweb_citation    = $this->getInput('indieweb_citation');
                 $indieweb_reference   = $this->getInput('indieweb_reference');
                 $user_avatar_favicons = $this->getInput('user_avatar_favicons');
@@ -52,6 +54,11 @@
                     $walled_garden = true;
                 } else {
                     $walled_garden = false;
+                }
+                if ($show_privacy == 'true') {
+                    $show_privacy = true;
+                } else {
+                    $show_privacy = false;
                 }
                 if ($indieweb_citation == 'true') {
                     $indieweb_citation = true;
@@ -74,6 +81,7 @@
                     $wayback_machine = false;
                 }
                 if (!empty($title)) \Idno\Core\site()->config->config['title'] = $title;
+                \Idno\Core\site()->config->config['homepagetitle'] = trim($homepagetitle);
                 if (!empty($description)) \Idno\Core\site()->config->config['description'] = $description;
                 if (!empty($url)) \Idno\Core\site()->config->config['url'] = $url;
                 if (!empty($path)) \Idno\Core\site()->config->config['path'] = $path;
@@ -82,6 +90,7 @@
                 if (!empty($items_per_page) && is_int($items_per_page)) \Idno\Core\site()->config->config['items_per_page'] = $items_per_page;
                 \Idno\Core\site()->config->config['open_registration']    = $open_registration;
                 \Idno\Core\site()->config->config['walled_garden']        = $walled_garden;
+                \Idno\Core\site()->config->config['show_privacy']         = $show_privacy;
                 \Idno\Core\site()->config->config['indieweb_citation']    = $indieweb_citation;
                 \Idno\Core\site()->config->config['indieweb_reference']   = $indieweb_reference;
                 \Idno\Core\site()->config->config['user_avatar_favicons'] = $user_avatar_favicons;

@@ -9,6 +9,7 @@
 
     namespace Idno\Core {
 
+        use Idno\Common\Entity;
         use Idno\Entities\User;
 
         class Session extends \Idno\Common\Component
@@ -68,8 +69,18 @@
 
                     $eventdata = $event->data();
                     $object    = $eventdata['object'];
+                    if ((!empty($this->user)) && ($this->user instanceof User)) {
+                        $user_uuid = $object->getUUID() == $this->user->getUUID();
+                    } else {
+                        $user_uuid = false;
+                    }
+                    if ($object instanceof Entity) {
+                        $object_uuid = $object->getUUID();
+                    } else {
+                        $object_uuid = false;
+                    }
                     if ((!empty($object)) && ($object instanceof \Idno\Entities\User) // Object is a user
-                        && ((!empty($_SESSION['user_uuid'])) && ($object->getUUID() == $this->user->getUUID()))
+                        && ((!empty($_SESSION['user_uuid'])) && (($object_uuid != $user_uuid) && $object_uuid !== false))
                     ) // And we're not trying a user change (avoids a possible exploit)
                     {
                         $this->user = $this->refreshSessionUser($object);
@@ -185,7 +196,7 @@
              */
             function addErrorMessage($message)
             {
-                $this->addMessage($message, 'alert-error');
+                $this->addMessage($message, 'alert-danger');
             }
 
             /**
@@ -411,7 +422,7 @@
             {
                 $return = $this->refreshSessionUser($user);
 
-                session_regenerate_id(true);
+                @session_regenerate_id(true);
 
                 return \Idno\Core\site()->triggerEvent('user/auth', array('user' => $user), $return);
             }

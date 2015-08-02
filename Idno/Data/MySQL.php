@@ -27,6 +27,7 @@
                     $this->client->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                     //$this->client->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
                 } catch (\Exception $e) {
+                    error_log($e->getMessage());
                     if (!empty(\Idno\Core\site()->config()->forward_on_empty)) {
                         header('Location: ' . \Idno\Core\site()->config()->forward_on_empty);
                         exit;
@@ -36,6 +37,7 @@
                             $message = '<p>' . $e->getMessage() . '</p>';
                             $message .= '<p>' . $connection_string . '</p>';
                         }
+                        error_log($e->getMessage());
                         include \Idno\Core\site()->config()->path . '/statics/db.php';
                         exit;
                     }
@@ -44,6 +46,69 @@
                 $this->database = \Idno\Core\site()->config()->dbname;
                 $this->checkAndUpgradeSchema();
 
+            }
+
+            /**
+             * Checks the current schema version and upgrades if necessary
+             */
+            function checkAndUpgradeSchema()
+            {
+                if ($versions = $this->getVersions()) {
+                    foreach ($versions as $version) {
+                        if ($version->label == 'schema') {
+                            $basedate          = $newdate = (int)$version->value;
+                            $upgrade_sql_files = array();
+                            $schema_dir        = dirname(dirname(dirname(__FILE__))) . '/schemas/mysql/';
+                            $client            = $this->client;
+                            /* @var \PDO $client */
+                            if ($basedate < 2014100801) {
+                                if ($sql = @file_get_contents($schema_dir . '2014100801.sql')) {
+                                    try {
+                                        $statement = $client->prepare($sql);
+                                        $statement->execute();
+                                    } catch (\Exception $e) {
+                                        //\Idno\Core\site()->logging()->log($e->getMessage());
+                                        error_log($e->getMessage());
+                                    }
+                                }
+                                $newdate = 2014100801;
+                            }
+                            if ($basedate < 2015061501) {
+                                if ($sql = @file_get_contents($schema_dir . '2015061501.sql')) {
+                                    try {
+                                        $statement = $client->prepare($sql);
+                                        $statement->execute();
+                                    } catch (\Exception $e) {
+                                        //\Idno\Core\site()->logging()->log($e->getMessage());
+                                        error_log($e->getMessage());
+                                    }
+                                }
+                                $newdate = 2015061501;
+                            }
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Retrieve version information from the schema
+             * @return array|bool
+             */
+            function getVersions()
+            {
+                try {
+                    $client = $this->client;
+                    /* @var \PDO $client */
+                    $statement = $client->prepare("select * from `versions`");
+                    if ($statement->execute()) {
+                        return $statement->fetchAll(\PDO::FETCH_OBJ);
+                    }
+                } catch (\Exception $e) {
+                    //\Idno\Core\site()->logging()->log($e->getMessage());
+                    error_log($e->getMessage());
+                }
+
+                return false;
             }
 
             /**
@@ -145,9 +210,10 @@
                 } catch (\Exception $e) {
                     $contents = json_encode([]);
                     \Idno\Core\site()->logging()->log($e->getMessage());
+
                     return false;
                 }
-                $search   = '';
+                $search = '';
                 if (!empty($array['title'])) {
                     $search .= $array['title'] . ' ';
                 }
@@ -443,69 +509,6 @@
 
                 } catch (\Exception $e) {
                     \Idno\Core\site()->logging()->log($e->getMessage());
-                    return false;
-                }
-
-                return false;
-            }
-
-            /**
-             * Export a collection as SQL.
-             * @param string $collection
-             * @return bool|string
-             */
-            function exportRecords($collection = 'entities')
-            {
-                try {
-                    $file   = tempnam(\Idno\Core\site()->config()->getTempDir(), 'sqldump');
-                    $client = $this->client;
-                    /* @var \PDO $client */
-                    $statement = $client->prepare("select * from {$collection}");
-                    $output    = '';
-                    if ($response = $statement->execute()) {
-                        while ($object = $statement->fetch(\PDO::FETCH_ASSOC)) {
-                            $uuid   = $object['uuid'];
-                            $fields = array_keys($object);
-                            $fields = array_map(function ($v) {
-                                return '`' . $v . '`';
-                            }, $fields);
-                            $object = array_map(function ($v) {
-                                return \Idno\Core\site()->db()->getClient()->quote($v);
-                            }, $object);
-                            $line   = 'insert into ' . $collection . ' ';
-                            $line .= '(' . implode(',', $fields) . ')';
-                            $line .= ' values ';
-                            $line .= '(' . implode(',', $object) . ');';
-                            $output .= $line . "\n";
-                            $metadata_statement = $client->prepare("select * from metadata where `entity` = :uuid");
-                            if ($metadata_response = $metadata_statement->execute([':uuid' => $uuid])) {
-                                while ($object = $metadata_statement->fetch(\PDO::FETCH_ASSOC)) {
-                                    $fields = array_keys($object);
-                                    $fields = array_map(function ($v) {
-                                        return '`' . $v . '`';
-                                    }, $fields);
-                                    $object = array_map(function ($v) {
-                                        return \Idno\Core\site()->db()->getClient()->quote($v);
-                                    }, $object);
-                                    $line   = 'insert into metadata ';
-                                    $line .= '(' . implode(',', $fields) . ')';
-                                    $line .= ' values ';
-                                    $line .= '(' . implode(',', $object) . ');';
-                                    $output .= $line . "\n";
-                                }
-                                unset($metadata_statement);
-                                gc_collect_cycles();    // Clean memory
-                            }
-                            $output .= "\n";
-                            unset($object);
-                            unset($fields);
-                            gc_collect_cycles();    // Clean memory
-                        }
-                    }
-
-                    return $output;
-                } catch (\Exception $e) {
-                    \Idno\Core\site()->logging()->log($e->getMessage());
 
                     return false;
                 }
@@ -641,6 +644,70 @@
             }
 
             /**
+             * Export a collection as SQL.
+             * @param string $collection
+             * @return bool|string
+             */
+            function exportRecords($collection = 'entities')
+            {
+                try {
+                    $file   = tempnam(\Idno\Core\site()->config()->getTempDir(), 'sqldump');
+                    $client = $this->client;
+                    /* @var \PDO $client */
+                    $statement = $client->prepare("select * from {$collection}");
+                    $output    = '';
+                    if ($response = $statement->execute()) {
+                        while ($object = $statement->fetch(\PDO::FETCH_ASSOC)) {
+                            $uuid   = $object['uuid'];
+                            $fields = array_keys($object);
+                            $fields = array_map(function ($v) {
+                                return '`' . $v . '`';
+                            }, $fields);
+                            $object = array_map(function ($v) {
+                                return \Idno\Core\site()->db()->getClient()->quote($v);
+                            }, $object);
+                            $line   = 'insert into ' . $collection . ' ';
+                            $line .= '(' . implode(',', $fields) . ')';
+                            $line .= ' values ';
+                            $line .= '(' . implode(',', $object) . ');';
+                            $output .= $line . "\n";
+                            $metadata_statement = $client->prepare("select * from metadata where `entity` = :uuid");
+                            if ($metadata_response = $metadata_statement->execute([':uuid' => $uuid])) {
+                                while ($object = $metadata_statement->fetch(\PDO::FETCH_ASSOC)) {
+                                    $fields = array_keys($object);
+                                    $fields = array_map(function ($v) {
+                                        return '`' . $v . '`';
+                                    }, $fields);
+                                    $object = array_map(function ($v) {
+                                        return \Idno\Core\site()->db()->getClient()->quote($v);
+                                    }, $object);
+                                    $line   = 'insert into metadata ';
+                                    $line .= '(' . implode(',', $fields) . ')';
+                                    $line .= ' values ';
+                                    $line .= '(' . implode(',', $object) . ');';
+                                    $output .= $line . "\n";
+                                }
+                                unset($metadata_statement);
+                                gc_collect_cycles();    // Clean memory
+                            }
+                            $output .= "\n";
+                            unset($object);
+                            unset($fields);
+                            gc_collect_cycles();    // Clean memory
+                        }
+                    }
+
+                    return $output;
+                } catch (\Exception $e) {
+                    \Idno\Core\site()->logging()->log($e->getMessage());
+
+                    return false;
+                }
+
+                return false;
+            }
+
+            /**
              * Count objects of a certain kind that we're allowed to see
              *
              * @param string|array $subtypes String or array of subtypes we're allowed to see
@@ -714,12 +781,13 @@
                     $statement = $client->prepare($query);
                     if ($result = $statement->execute($variables)) {
                         if ($obj = $statement->fetchObject()) {
-                            return $obj->total;
+                            return (int)$obj->total;
                         }
                     }
 
                 } catch (Exception $e) {
                     \Idno\Core\site()->logging()->log($e->getMessage());
+
                     return false;
                 }
 
@@ -760,6 +828,7 @@
                 } catch (\Exception $e) {
 
                     \Idno\Core\site()->logging()->log($e->getMessage());
+
                     return false;
 
                 }
@@ -786,66 +855,6 @@
             function createSearchArray($query)
             {
                 return array('$search' => array($query));
-            }
-
-            /**
-             * Retrieve version information from the schema
-             * @return array|bool
-             */
-            function getVersions()
-            {
-                try {
-                    $client = $this->client;
-                    /* @var \PDO $client */
-                    $statement = $client->prepare("select * from `versions`");
-                    if ($statement->execute()) {
-                        return $statement->fetchAll(\PDO::FETCH_OBJ);
-                    }
-                } catch (\Exception $e) {
-                    \Idno\Core\site()->logging()->log($e->getMessage());
-                }
-
-                return false;
-            }
-
-            /**
-             * Checks the current schema version and upgrades if necessary
-             */
-            function checkAndUpgradeSchema()
-            {
-                if ($versions = $this->getVersions()) {
-                    foreach ($versions as $version) {
-                        if ($version->label == 'schema') {
-                            $basedate          = $newdate = (int)$version->value;
-                            $upgrade_sql_files = array();
-                            $schema_dir        = dirname(dirname(dirname(__FILE__))) . '/schemas/mysql/';
-                            $client            = $this->client;
-                            /* @var \PDO $client */
-                            if ($basedate < 2014100801) {
-                                if ($sql = @file_get_contents($schema_dir . '2014100801.sql')) {
-                                    try {
-                                        $statement = $client->prepare($sql);
-                                        $statement->execute();
-                                    } catch (\Exception $e) {
-                                        \Idno\Core\site()->logging()->log($e->getMessage());
-                                    }
-                                }
-                                $newdate = 2014100801;
-                            }
-                            if ($basedate < 2015061501) {
-                                if ($sql = @file_get_contents($schema_dir . '2015061501.sql')) {
-                                    try {
-                                        $statement = $client->prepare($sql);
-                                        $statement->execute();
-                                    } catch (\Exception $e) {
-                                        \Idno\Core\site()->logging()->log($e->getMessage());
-                                    }
-                                }
-                                $newdate = 2015061501;
-                            }
-                        }
-                    }
-                }
             }
 
         }

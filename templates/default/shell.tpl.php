@@ -33,11 +33,11 @@
         if (\Idno\Core\site()->session()->isLoggedIn()) {
 
             ?>
-            <link rel="manifest" href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>chrome/manifest.json">
+            <!-- <link rel="manifest" href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>chrome/manifest.json"> -->
         <?php
             if (Idno\Core\site()->isSecure()) {
         ?>
-            <script>
+            <!-- <script>
                 window.addEventListener('load', function () {
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.register('<?=\Idno\Core\site()->config()->getDisplayURL()?>chrome/service-worker.js', {scope: '/'})
@@ -50,7 +50,7 @@
                             });
                     }
                 });
-            </script>
+            </script> -->
         <?php
         }
 
@@ -245,6 +245,11 @@
         } else {
 
             ?>
+            <style>
+                body {
+                    padding-top: 0px !important; /* 60px to make the container go all the way to the bottom of the topbar */
+                }
+            </style>
             <div style="height: 1em;"><br/></div>
         <?php
 
@@ -360,9 +365,6 @@
     }
 
     $(document).ready(function () {
-        annotateContent();
-    })
-    $(document).on('pjax:complete', function () {
         annotateContent();
     });
 

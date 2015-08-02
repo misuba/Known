@@ -12,31 +12,6 @@
         class Webmention extends \Idno\Common\Component
         {
 
-            function init()
-            {
-            }
-
-            function registerPages()
-            {
-                \Idno\Core\site()->addPageHandler('/webmention/?', '\Idno\Pages\Webmentions\Endpoint', true);
-            }
-
-            function registerEventHooks()
-            {
-
-                // Add webmention headers to the top of the page
-                \Idno\Core\site()->addEventHook('page/head', function (Event $event) {
-
-                    if (!empty(site()->config()->hub)) {
-                        $eventdata = $event->data();
-                        header('Link: <' . \Idno\Core\site()->config()->getURL() . 'webmention/>; rel="http://webmention.org/"', false);
-                        header('Link: <' . \Idno\Core\site()->config()->getURL() . 'webmention/>; rel="webmention"', false);
-                    }
-
-                });
-
-            }
-
             /**
              * Pings mentions from a given page to any linked pages
              * @param $pageURL Page URL
@@ -67,6 +42,23 @@
             }
 
             /**
+             * Send a webmention payload to a target without parsing HTML
+             *
+             * @param $sourceURL
+             * @param $targetURL
+             * @return bool
+             */
+            static function sendWebmentionPayload($sourceURL, $targetURL)
+            {
+
+                // Load webmention-client
+                require_once \Idno\Core\site()->config()->path . '/external/mention-client-php/src/IndieWeb/MentionClient.php';
+                $client = new \Idno\Core\MentionClient($sourceURL);
+
+                return $client->sendWebmentionPayload($targetURL);
+            }
+
+            /**
              * Does the supplied page support webmentions?
              * @param $pageURL
              * @param bool $sourceBody
@@ -74,6 +66,7 @@
              */
             static function supportsMentions($pageURL, $sourceBody = false)
             {
+
                 // Load webmention-client
                 require_once \Idno\Core\site()->config()->path . '/external/mention-client-php/src/IndieWeb/MentionClient.php';
 
@@ -86,24 +79,6 @@
                 $client = new \Idno\Core\MentionClient($pageURL, $sourceBody, $proxystring);
 
                 return $client->supportsWebmention($pageURL);
-            }
-
-            /**
-             * Parses a given set of HTML for Microformats 2 content
-             * @param $content HTML to parse
-             * @param $url Optionally, the source URL of the content, so relative URLs can be parsed into absolute ones
-             * @return array
-             */
-            static function parseContent($content, $url = null)
-            {
-                $parser = new \Mf2\Parser($content, $url);
-                try {
-                    $return = $parser->parse();
-                } catch (\Exception $e) {
-                    $return = false;
-                }
-
-                return $return;
             }
 
             /**
@@ -135,6 +110,24 @@
                 }
 
                 return $inreplyto;
+            }
+
+            /**
+             * Parses a given set of HTML for Microformats 2 content
+             * @param $content HTML to parse
+             * @param $url Optionally, the source URL of the content, so relative URLs can be parsed into absolute ones
+             * @return array
+             */
+            static function parseContent($content, $url = null)
+            {
+                $parser = new \Mf2\Parser($content, $url);
+                try {
+                    $return = $parser->parse();
+                } catch (\Exception $e) {
+                    $return = false;
+                }
+
+                return $return;
             }
 
             /**
@@ -227,6 +220,31 @@
                 }
 
                 return false;
+            }
+
+            function init()
+            {
+            }
+
+            function registerPages()
+            {
+                \Idno\Core\site()->addPageHandler('/webmention/?', '\Idno\Pages\Webmentions\Endpoint', true);
+            }
+
+            function registerEventHooks()
+            {
+
+                // Add webmention headers to the top of the page
+                \Idno\Core\site()->addEventHook('page/head', function (Event $event) {
+
+                    if (!empty(site()->config()->hub)) {
+                        $eventdata = $event->data();
+                        header('Link: <' . \Idno\Core\site()->config()->getURL() . 'webmention/>; rel="http://webmention.org/"', false);
+                        header('Link: <' . \Idno\Core\site()->config()->getURL() . 'webmention/>; rel="webmention"', false);
+                    }
+
+                });
+
             }
 
         }
