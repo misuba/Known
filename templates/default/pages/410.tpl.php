@@ -9,7 +9,9 @@
     </div>
     <div class="row">
         <div class="col-md-offset-1 col-md-10">
-            <p class="p-summary">This resource isn't here anymore.</p>
+            <p class="p-summary">
+                This resource isn't here anymore.
+                (That, or it's something you need to <a href="<?=\Idno\Core\site()->config()->getDisplayURL()?>/session/login">log in</a> to see, but no promises.)</p>
             <p>
                 Cool links never die, but sometimes things don't work out.
                 <a href="<?=\Idno\Core\site()->config()->getDisplayURL()?>">Click here to head back to the <?=\Idno\Core\site()->config()->title?> homepage</a>.
