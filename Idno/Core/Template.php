@@ -26,6 +26,9 @@
             // We can also extend templates with HTML or other content
             public $rendered_extensions = array();
 
+            // Keep track of the HTML purifier
+            public $purifier = false;
+
             /**
              * On construction, detect the template type
              */
@@ -37,6 +40,8 @@
 
                 assert('\Idno\Core\site()->config()->site_secret /* Site secret not set */');
                 \Bonita\Main::siteSecret(\Idno\Core\site()->config()->site_secret);
+
+                $this->purifier = new Purifier();
 
                 return parent::__construct($template);
             }
@@ -220,12 +225,14 @@
 
             /**
              * Sanitize HTML in a large block of text, removing XSS and other vulnerabilities.
-             * This works by calling the text/filter event, note that currently there is no native implementation.
+             * This works by calling the text/filter event, as well as any built-in purifier.
              * @param type $html
              */
             function sanitize_html($html)
             {
-                return site()->triggerEvent('text/filter', [], $html);
+                $html = site()->triggerEvent('text/filter', [], $html);
+                
+                return $html;
             }
 
             /**
@@ -278,6 +285,10 @@
                     $url = $matches[1];
                     $tag = str_replace('#', '', $matches[1]);
 
+                    if (preg_match('/\#[0-9]{1,3}$/', $matches[1])) {
+                        return $matches[1];
+                    }
+
                     if (preg_match('/\#[A-Fa-f0-9]{6}/', $matches[1])) {
                         return $matches[1];
                     }
@@ -324,7 +335,11 @@
                     substr($url, 0, 4) == 'sms:' ||
                     substr($url, 0, 6) == 'skype:' ||
                     substr($url, 0, 5) == 'xmpp:' ||
-                    substr($url, 0, 5) == 'facetime:'
+                    substr($url, 0, 4) == 'sip:' ||
+                    substr($url, 0, 4) == 'ssh:' ||
+                    substr($url, 0, 8) == 'spotify:' ||
+                    substr($url, 0, 8) == 'bitcoin:' ||
+                    substr($url, 0, 9) == 'facetime:'
                 )
                     ? $url
                     : 'http://' . $url;

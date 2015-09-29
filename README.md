@@ -4,14 +4,34 @@
 
 ##Installation [![Build Status](https://travis-ci.org/idno/Known.svg?branch=master)](https://travis-ci.org/idno/Known)
 
-Known is under active development, and requires PHP 5.4+ with selected extensions, together with a supported database backend. 
+###One-click Known sites
+
+A fully-managed hosted service is provided at <https://withknown.com/>. It is always kept up to date with the latest
+version of Known.
+
+Exclusive web hosting sponsor:
+
+[![DreamHost](https://withknown.com/img/sponsor_dh_small.jpg)](http://dreamhost.com/redir.cgi?promo=known595&url=promo/hosting595/&utm_source=known&utm_medium=banner&utm_content=sponsorshared595&utm_campaign=shared)
+
+We've tested DreamHost's hosting platform and highly recommend it for supporting your Known site.
+
+###Installing
+
+Known is under active development and requires PHP 5.4+ with selected extensions, together with a supported database backend.
 
 If you are installing Known for use on your own website, we HIGHLY recommend using the installable packages
-from <https://withknown.com/>, installation will be much easier!
+from <https://withknown.com/opensource>. Installation will be much easier!
 
-You can also opt to check out the bleeding edge code from the git repository: https://github.com/idno/Known
+You can also opt to check out the bleeding edge code from the git repository: <https://github.com/idno/Known>
 
-Either way, you should read the detailed installation instructions: http://docs.withknown.com/en/latest/install/index.html
+Detailed installation instructions: <http://docs.withknown.com/en/latest/install/index.html>
+
+###Support
+
+* [Star us on GitHub](https://github.com/idno/known)
+* [Like us on alternativeto.net](http://alternativeto.net/software/known/)
+* [Contribute](CONTRIBUTORS.md)
+
 
 ## Community links
 
@@ -65,3 +85,4 @@ Third party libraries are licensed separately.
 * Bootstrap Toggle, which is distributed under the MIT License. Source: http://www.bootstraptoggle.com/
 * TinyMCE, a rich text editor, which is distributed under the AGPL License. Source: https://github.com/tinymce/tinymce
 * The Paypal Bootstrap Accessibility Plugin, which is distributed under the BSD License. Source: https://github.com/paypal/bootstrap-accessibility-plugin
+* HTMLPurifier, which is distributed under the LGPL License. Source: http://htmlpurifier.org

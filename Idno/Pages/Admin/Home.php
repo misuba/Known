@@ -15,6 +15,7 @@
             function getContent()
             {
                 $this->adminGatekeeper(); // Admins only
+                \Idno\Core\site()->db()->optimize();
                 if ($messages = \Idno\Core\site()->getVendorMessages()) {
                     \Idno\Core\site()->session()->addMessage($messages);
                 }
@@ -95,6 +96,9 @@
                 \Idno\Core\site()->config->config['indieweb_reference']   = $indieweb_reference;
                 \Idno\Core\site()->config->config['user_avatar_favicons'] = $user_avatar_favicons;
                 \Idno\Core\site()->config->config['wayback_machine']      = $wayback_machine;
+
+                \Idno\Core\site()->triggerEvent('admin/home/save');
+
                 \Idno\Core\site()->config()->save();
                 $this->forward(\Idno\Core\site()->config()->getURL() . 'admin/');
             }

@@ -53,7 +53,9 @@
                 $email      = trim($this->getInput('email'));
                 $code       = $this->getInput('code');
                 $onboarding = $this->getInput('onboarding');
-
+                
+                $this->referrerGatekeeper();
+                
                 /*if (!\Idno\Common\Page::isSSL() && !\Idno\Core\site()->config()->disable_cleartext_warning) {
                     \Idno\Core\site()->session()->addErrorMessage("Warning: Access credentials were sent over a non-secured connection! To disable this warning set disable_cleartext_warning in your config.ini");
                 }*/
@@ -74,12 +76,13 @@
                     \Idno\Core\site()->session()->addErrorMessage("Please enter a username and email address.");
                 } else if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     if (
+                        !(\Idno\Core\site()->config()->emailIsBlocked($email)) &&
                         !($emailuser = \Idno\Entities\User::getByEmail($email)) &&
                         !($handleuser = \Idno\Entities\User::getByHandle($handle)) &&
                         !empty($handle) && strlen($handle) <= 32 &&
                         preg_match('/^[a-zA-Z0-9_]{1,}$/', $handle) &&
                         !substr_count($handle, '/') &&
-                        $password == $password2 &
+                        $password == $password2 &&
                         \Idno\Entities\User::checkNewPasswordStrength($password)
                     ) {
                         $user         = new \Idno\Entities\User();

@@ -27,7 +27,7 @@
             public $public_pages;
             public $syndication;
             public $logging;
-            public static $site;
+            public static $site; /* @var \Idno\Core\Idno $site */
             public $currentPage;
             public $known_hub;
             public $helper_robot;
@@ -137,6 +137,9 @@
                 /** Homepage */
                 $this->addPageHandler('', '\Idno\Pages\Homepage');
                 $this->addPageHandler('/', '\Idno\Pages\Homepage');
+                $this->addPageHandler('/feed\.xml', '\Idno\Pages\Feed');
+                $this->addPageHandler('/feed/?', '\Idno\Pages\Feed');
+                $this->addPageHandler('/rss\.xml', '\Idno\Pages\Feed');
                 $this->addPageHandler('/content/([A-Za-z\-\/]+)+', '\Idno\Pages\Homepage');
 
                 /** Individual entities / posting / deletion */
@@ -544,7 +547,7 @@
              */
             function version()
             {
-                return '0.8.2';
+                return '0.8.4';
             }
 
             /**
@@ -562,7 +565,7 @@
              */
             function machineVersion()
             {
-                return '2015072201';
+                return '2015092801';
             }
 
             /**
@@ -626,12 +629,16 @@
                 if ($user = \Idno\Entities\User::getByUUID($user_id)) {
 
                     // Remote users can't ever create anything :( - for now
-                    if ($user instanceof \Idno\Entities\RemoteUser)
+                    if ($user instanceof \Idno\Entities\RemoteUser) {
                         return false;
+                    }
 
                     // But local users can
-                    if ($user instanceof \Idno\Entities\User)
-                        return true;
+                    if ($user instanceof \Idno\Entities\User) {
+                        if (empty($user->read_only)) {
+                            return true;
+                        }
+                    }
 
                 }
 
@@ -762,7 +769,7 @@
 
         /**
          * Helper function that returns the current site object
-         * @return \Idno\Core\Idno
+         * @return \Idno\Core\Idno $site
          */
         function &site()
         {

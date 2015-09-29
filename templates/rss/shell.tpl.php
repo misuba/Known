@@ -3,8 +3,12 @@
     header('Content-type: application/rss+xml');
     unset($vars['body']);
 
-    if (empty($vars['title']) && !empty($vars['description'])) {
-        $vars['title'] = implode(' ',array_slice(explode(' ', strip_tags($vars['description'])),0,10));
+    if (empty($vars['title'])) {
+        if (!empty($vars['description'])) {
+            $vars['title'] = implode(' ',array_slice(explode(' ', strip_tags($vars['description'])),0,10));
+        } else {
+            $vars['title'] = 'Known site';
+        }
     }
 
     $page = new DOMDocument();
@@ -21,10 +25,10 @@
     if (!empty(\Idno\Core\site()->config()->description)) {
         $site_description = $page->createElement('description');
         $site_description->appendChild($page->createCDATASection(\Idno\Core\site()->config()->description));
-        $rss->appendChild($site_description);
+        $channel->appendChild($site_description);
         $site_description = $page->createElement('itunes:summary');
         $site_description->appendChild($page->createCDATASection(\Idno\Core\site()->config()->description));
-        $rss->appendChild($site_description);
+        $channel->appendChild($site_description);
     }
     $channel->appendChild($page->createElement('link',$this->getCurrentURLWithoutVar('_t')));
     if (!empty(\Idno\Core\site()->config()->hub)) {
@@ -54,16 +58,22 @@
             if (!($item instanceof \Idno\Common\Entity)) {
                 continue;
             }
-            $rssItem = $page->createElement('item');
-            if ($title = $item->getTitle()) {
-                $rssItem->appendChild($page->createElement('title',$item->getTitle()));
+            $title = $item->getTitle();
+            if (empty($title)) {
+                if ($description = $item->getShortDescription(5)) {
+                    $title = $description;
+                } else {
+                    $title = 'New ' . $item->getContentTypeTitle();
+                }
             }
-            $rssItem->appendChild($page->createElement('link',$item->getDisplayURL()));
+            $rssItem = $page->createElement('item');
+            $rssItem->appendChild($page->createElement('title',$title));
+            $rssItem->appendChild($page->createElement('link',$item->getSyndicationURL()));
             $rssItem->appendChild($page->createElement('guid',$item->getUUID()));
             $rssItem->appendChild($page->createElement('pubDate',date(DATE_RSS,$item->created)));
             
             $owner = $item->getOwner();
-            $rssItem->appendChild($page->createElement('author', "{$owner->email} ({$owner->title})"));
+            $rssItem->appendChild($page->createElement('author', "{$owner->title}"));
             //$rssItem->appendChild($page->createElement('dc:creator', $owner->title));
             
             $description = $page->createElement('description');
