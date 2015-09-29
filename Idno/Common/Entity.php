@@ -1794,6 +1794,10 @@
                 if (empty($local_url)) {
                     $local_url = $this->getURL() . '/annotations/' . md5(time() . $content); // Invent a URL for this annotation if we don't have one already
                 }
+                if (is_a(\Idno\Core\site()->db()->client, 'MongoClient'))
+                {
+                    $local_url = str_replace('.', '~', $local_url);
+                }
                 if (empty($time)) {
                     $time = time();
                 } else {
