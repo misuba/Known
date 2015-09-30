@@ -9,6 +9,7 @@
 
     namespace Idno\Core {
 
+        use Idno\Common\Entity;
         use Idno\Entities\User;
 
         class Session extends \Idno\Common\Component
@@ -20,16 +21,23 @@
             {
                 ini_set('session.cookie_lifetime', 60 * 60 * 24 * 7); // Persistent cookies
                 ini_set('session.gc_maxlifetime', 60 * 60 * 24 * 7); // Garbage collection to match
-                ini_set('session.cookie_httponly', true); // Restrict cookies to HTTP only (help reduce XSS attack profile)
-                ini_set('session.use_strict_mode', true); // Help mitigate session fixation
+
+                if (site()->config()->session_cookies) {
+                    header('P3P: CP="CAO PSA OUR"');
+                    ini_set('session.cookie_httponly', true); // Restrict cookies to HTTP only (help reduce XSS attack profile)
+                    ini_set('session.use_strict_mode', true); // Help mitigate session fixation
+                    if (site()->isSecure()) {
+                        ini_set('session.cookie_secure', true); // Set secure cookies when site is secure
+                    }
+                } else {
+                    ini_set('session.use_only_cookies', 0);
+                    ini_set("session.use_cookies",0);
+                    ini_set("session.use_trans_sid",1);
+                }
 
                 // Using a more secure hashing algorithm for session IDs, if available
                 if (($hash = site()->config()->session_hash_function) && (in_array($hash, hash_algos()))) {
                     ini_set('session.hash_function', $hash);
-                }
-
-                if (site()->isSecure()) {
-                    ini_set('session.cookie_secure', true); // Set secure cookies when site is secure
                 }
 
                 if (site()->config()->sessions_database) {
@@ -41,7 +49,6 @@
                 session_name(site()->config->sessionname);
                 session_start();
                 session_cache_limiter('public');
-
 
                 // Flag insecure sessions (so we can check state changes etc)
                 if (!isset($_SESSION['secure'])) {
@@ -57,7 +64,6 @@
                     session_destroy();
                 }
 
-
                 // Session login / logout
                 site()->addPageHandler('/session/login', '\Idno\Pages\Session\Login', true);
                 site()->addPageHandler('/session/logout', '\Idno\Pages\Session\Logout');
@@ -68,16 +74,34 @@
 
                     $eventdata = $event->data();
                     $object    = $eventdata['object'];
+                    if ((!empty($this->user)) && ($this->user instanceof User)) {
+                        $user_uuid = $object->getUUID() == $this->user->getUUID();
+                    } else {
+                        $user_uuid = false;
+                    }
+                    if ($object instanceof Entity) {
+                        $object_uuid = $object->getUUID();
+                    } else {
+                        $object_uuid = false;
+                    }
                     if ((!empty($object)) && ($object instanceof \Idno\Entities\User) // Object is a user
-                        && ((!empty($_SESSION['user_uuid'])) && ($object->getUUID() == $this->user->getUUID()))
+                        && ((!empty($_SESSION['user_uuid'])) && (($object_uuid != $user_uuid) && $object_uuid !== false))
                     ) // And we're not trying a user change (avoids a possible exploit)
                     {
                         $this->user = $this->refreshSessionUser($object);
                     }
 
                 });
+                
+                // If this is an API request, we need to destroy the session afterwards. See #1028
+                register_shutdown_function(function () {
+                    $session = site()->session();
+                    if ($session && $session->isAPIRequest()) {
+                        $session->logUserOff();
+                    }
+                });
             }
-
+            
             /**
              * Validate the session.
              * @throws \Exception if the session is invalid.
@@ -185,7 +209,7 @@
              */
             function addErrorMessage($message)
             {
-                $this->addMessage($message, 'alert-error');
+                $this->addMessage($message, 'alert-danger');
             }
 
             /**
@@ -363,10 +387,6 @@
 
                     if ($user = \Idno\Entities\User::getByHandle($_SERVER['HTTP_X_KNOWN_USERNAME'])) {
 
-                        // Short circuit authentication, since this user is already logged in. Needed to resolve #595
-                        if (\Idno\Core\site()->session()->currentUser() && \Idno\Core\site()->session()->currentUser()->getUUID() == $user->getUUID())
-                            return $user;
-
                         $key          = $user->getAPIkey();
                         $hmac         = trim($_SERVER['HTTP_X_KNOWN_SIGNATURE']);
                         $compare_hmac = base64_encode(hash_hmac('sha256', $_SERVER['REQUEST_URI'], $key, true));
@@ -393,7 +413,17 @@
 
                 // If this is an API request but we're not logged in, set page response code to access denied
                 if ($this->isAPIRequest() && !$return) {
-                    site()->currentPage()->setResponse(403);
+                    
+                    $ip = $_SERVER['REMOTE_ADDR'];
+                    if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                         $proxies = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']); // We are behind a proxy 
+                         $ip = trim($proxies[0]);
+                    }
+
+                    site()->logging()->log("API Login failure from $ip", LOGLEVEL_ERROR); 
+                    //\Idno\Core\site()->triggerEvent('login/failure/api'); // Can't be used until #918 is fixed.
+                    
+                    site()->currentPage()->deniedContent();
                 }
 
                 return $return;
@@ -409,10 +439,12 @@
 
             function logUserOn(\Idno\Entities\User $user)
             {
+                if (site()->config()->emailIsBlocked($user->email)) {
+                    $this->logUserOff();
+                    return false;
+                }
                 $return = $this->refreshSessionUser($user);
-
-                session_regenerate_id(true);
-
+                @session_regenerate_id(true);
                 return \Idno\Core\site()->triggerEvent('user/auth', array('user' => $user), $return);
             }
 
@@ -424,6 +456,12 @@
             function refreshSessionUser(\Idno\Entities\User $user)
             {
                 if ($user = User::getByUUID($user->getUUID())) {
+
+                    if (site()->config()->emailIsBlocked($user->email)) {
+                        $this->logUserOff();
+                        return false;
+                    }
+
                     $_SESSION['user_uuid'] = $user->getUUID();
                     $this->user            = $user;
 
@@ -439,7 +477,11 @@
             function refreshCurrentSessionuser()
             {
                 if (!$this->currentUser() && !empty($_SESSION['user_uuid'])) {
-                    $this->user = User::getByUUID($_SESSION['user_uuid']);
+                    if ($this->user = User::getByUUID($_SESSION['user_uuid'])) {
+                        if (site()->config()->emailIsBlocked($this->user->email)) {
+                            $this->logUserOff();
+                        }
+                    }
                 } else if ($this->isLoggedIn()) {
                     $user_uuid = $this->currentUserUUID();
                     if ($user = User::getByUUID($user_uuid)) {
@@ -479,11 +521,11 @@
              */
             function publicGatekeeper()
             {
+
                 if (!site()->config()->isPublicSite()) {
                     if (!site()->session()->isLoggedOn()) {
                         $class = get_class(site()->currentPage());
                         if (!site()->isPageHandlerPublic($class)) {
-
                             site()->currentPage()->setResponse(403);
                             if (!\Idno\Core\site()->session()->isAPIRequest()) {
                                 site()->currentPage()->forward(site()->config()->getURL() . 'session/login/?fwd=' . urlencode($_SERVER['REQUEST_URI']));

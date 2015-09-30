@@ -23,6 +23,7 @@
                 try {
                     $this->client = new \MongoClient(site()->config()->dbstring);
                 } catch (\MongoConnectionException $e) {
+                    http_response_code(500);
                     echo '<p>Unfortunately we couldn\'t connect to the database:</p><p>' . $e->getMessage() . '</p>';
                     exit;
                 }
@@ -40,12 +41,12 @@
             }
 
             /**
-             * Returns an instance of the database client reference variable
-             * @return \Mongo
+             * Performs database optimizations, depending on engine
+             * @return bool
              */
-            function getClient()
+            function optimize()
             {
-                return $this->client;
+                return true;
             }
 
             /**
@@ -61,6 +62,15 @@
                 ]);
 
                 session_set_save_handler($sessionHandler, true);
+            }
+
+            /**
+             * Returns an instance of the database client reference variable
+             * @return \Mongo
+             */
+            function getClient()
+            {
+                return $this->client;
             }
 
             /**
@@ -128,16 +138,6 @@
             }
 
             /**
-             * Process the ID appropriately
-             * @param $id
-             * @return \MongoId
-             */
-            function processID($id)
-            {
-                return new \MongoId($id);
-            }
-
-            /**
              * Retrieves a record from the database by its UUID
              *
              * @param string $id
@@ -167,6 +167,16 @@
                     }
 
                 return false;
+            }
+
+            /**
+             * Process the ID appropriately
+             * @param $id
+             * @return \MongoId
+             */
+            function processID($id)
+            {
+                return new \MongoId($id);
             }
 
             /**

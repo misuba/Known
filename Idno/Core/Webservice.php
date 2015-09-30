@@ -16,6 +16,18 @@
             public static $lastResponse = '';
 
             /**
+             * Send a web services POST request to a specified URI endpoint
+             * @param string $endpoint The URI to send the POST request to
+             * @param mixed $params Optionally, an array of parameters to send (keys are the parameter names), or the raw body text (depending on Content-Type)
+             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
+             * @return array
+             */
+            static function post($endpoint, $params = null, array $headers = null)
+            {
+                return self::send('post', $endpoint, $params, $headers);
+            }
+
+            /**
              * Send a web services request to a specified endpoint
              * @param string $verb The verb to send the request with; one of POST, GET, DELETE, PUT
              * @param string $endpoint The URI to send the request to
@@ -43,6 +55,8 @@
                         curl_setopt($curl_handle, CURLOPT_CUSTOMREQUEST, 'PUT'); // Override request type
                         curl_setopt($curl_handle, CURLOPT_POSTFIELDS, $params);
                         break;
+                    case 'head':
+                        curl_setopt($curl_handle, CURLOPT_NOBODY, true);
                     case 'get':
                     default:
                         $req = "";
@@ -53,7 +67,6 @@
                             $req = $params;
                         }
 
-                        curl_setopt($curl_handle, CURLOPT_HTTPGET, true);
                         if (strpos($endpoint, '?') !== false) {
                             $endpoint .= '&' . $req;
                         } else {
@@ -154,105 +167,6 @@
             }
 
             /**
-             * Send a web services GET request to a specified URI endpoint
-             * @param string $endpoint The URI to send the GET request to
-             * @param array $params Optionally, an array of parameters to send (keys are the parameter names)
-             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
-             * @return array
-             */
-            static function get($endpoint, array $params = null, array $headers = null)
-            {
-                return self::send('get', $endpoint, $params, $headers);
-            }
-
-            /**
-             * Send a web services POST request to a specified URI endpoint
-             * @param string $endpoint The URI to send the POST request to
-             * @param mixed $params Optionally, an array of parameters to send (keys are the parameter names), or the raw body text (depending on Content-Type)
-             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
-             * @return array
-             */
-            static function post($endpoint, $params = null, array $headers = null)
-            {
-                return self::send('post', $endpoint, $params, $headers);
-            }
-
-            /**
-             * Send a web services PUT request to a specified URI endpoint
-             * @param string $endpoint The URI to send the PUT request to
-             * @param mixed $params Optionally, an array of parameters to send (keys are the parameter names), or the raw body text (depending on Content-Type)
-             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
-             * @return array
-             */
-            static function put($endpoint, $params = null, array $headers = null)
-            {
-                return self::send('put', $endpoint, $params, $headers);
-            }
-
-            /**
-             * Send a web services DELETE request to a specified URI endpoint
-             * @param string $endpoint The URI to send the DELETE request to
-             * @param array $params Optionally, an array of parameters to send (keys are the parameter names)
-             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
-             * @return array
-             */
-            static function delete($endpoint, array $params = null, array $headers = null)
-            {
-                return self::send('delete', $endpoint, $params, $headers);
-            }
-
-            /**
-             * Replacement for file_get_contents for retrieving remote files.
-             * Essentially a wrapper for self::get()
-             * @param type $url
-             */
-            static function file_get_contents($url)
-            {
-                $result = self::get($url);
-
-                if ($result['error'] == "")
-                    return $result['content'];
-
-                return false;
-            }
-
-            /**
-             * Take a URL, check for a schema and add one if necessary
-             * @param $url
-             * @return string|bool
-             */
-            static function sanitizeURL($url)
-            {
-                if (!empty($url)) {
-                    if (!substr_count($url, ':') && !substr_count($url, '//')) {
-                        $url = 'http://' . $url;
-                    }
-
-                    return $url;
-                }
-
-                return false;
-            }
-
-            /**
-             * Retrieves the last HTTP request sent by the service client
-             * @return string
-             */
-            static function getLastRequest()
-            {
-                return self::$lastRequest;
-            }
-
-            /**
-             * Retrieves the last HTTP response sent to the service client
-             * @return string
-             */
-            static function getLastResponse()
-            {
-                return self::$lastResponse;
-            }
-
-            /**
              * Wrapper for curl_exec
              * @param $ch
              * @param null $maxredirect
@@ -331,8 +245,109 @@
                     return curl_exec($ch);
                 } catch (\Exception $e) {
                     \Idno\Core\site()->logging()->log($e->getMessage());
+
                     return false;
                 }
+            }
+
+            /**
+             * Send a web services PUT request to a specified URI endpoint
+             * @param string $endpoint The URI to send the PUT request to
+             * @param mixed $params Optionally, an array of parameters to send (keys are the parameter names), or the raw body text (depending on Content-Type)
+             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
+             * @return array
+             */
+            static function put($endpoint, $params = null, array $headers = null)
+            {
+                return self::send('put', $endpoint, $params, $headers);
+            }
+
+            /**
+             * Send a web services DELETE request to a specified URI endpoint
+             * @param string $endpoint The URI to send the DELETE request to
+             * @param array $params Optionally, an array of parameters to send (keys are the parameter names)
+             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
+             * @return array
+             */
+            static function delete($endpoint, array $params = null, array $headers = null)
+            {
+                return self::send('delete', $endpoint, $params, $headers);
+            }
+
+            /**
+             * Replacement for file_get_contents for retrieving remote files.
+             * Essentially a wrapper for self::get()
+             * @param type $url
+             */
+            static function file_get_contents($url)
+            {
+                $result = self::get($url);
+
+                if ($result['error'] == "")
+                    return $result['content'];
+
+                return false;
+            }
+
+            /**
+             * Send a web services GET request to a specified URI endpoint
+             * @param string $endpoint The URI to send the GET request to
+             * @param array $params Optionally, an array of parameters to send (keys are the parameter names)
+             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
+             * @return array
+             */
+            static function get($endpoint, array $params = null, array $headers = null)
+            {
+                return self::send('get', $endpoint, $params, $headers);
+            }
+            
+            
+            /**
+             * Send a web services HEAD request to a specified URI endpoint
+             * @param string $endpoint The URI to send the HEAD request to
+             * @param array $params Optionally, an array of parameters to send (keys are the parameter names)
+             * @param array $headers Optionally, an array of headers to send with the request (keys are the header names)
+             * @return array
+             */
+            static function head($endpoint, array $params = null, array $headers = null)
+            {
+                return self::send('head', $endpoint, $params, $headers);
+            }
+
+            /**
+             * Take a URL, check for a schema and add one if necessary
+             * @param $url
+             * @return string|bool
+             */
+            static function sanitizeURL($url)
+            {
+                if (!empty($url)) {
+                    if (!substr_count($url, ':') && !substr_count($url, '//')) {
+                        $url = 'http://' . $url;
+                    }
+
+                    return $url;
+                }
+
+                return false;
+            }
+
+            /**
+             * Retrieves the last HTTP request sent by the service client
+             * @return string
+             */
+            static function getLastRequest()
+            {
+                return self::$lastRequest;
+            }
+
+            /**
+             * Retrieves the last HTTP response sent to the service client
+             * @return string
+             */
+            static function getLastResponse()
+            {
+                return self::$lastResponse;
             }
 
         }

@@ -25,7 +25,7 @@
                     $fwd = '';
                 }
                 $t        = \Idno\Core\site()->template();
-                $t->body  = $t->__(array('fwd' => $fwd))->draw('session/login');
+                $t->body  = $t->__(array('fwd' => $fwd))->draw('account/login');
                 $t->title = 'Sign in';
                 $t->drawPage();
             }
@@ -38,6 +38,8 @@
                     $fwd = \Idno\Core\site()->config()->url;
                 }
 
+                $this->referrerGatekeeper();
+                
                 if ($user = \Idno\Entities\User::getByHandle($this->getInput('email'))) {
                 } else if ($user = \Idno\Entities\User::getByEmail($this->getInput('email'))) {
                 } else {

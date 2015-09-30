@@ -15,7 +15,7 @@
             
             function registerContentTypes() {
                 parent::registerContentTypes();
-                
+
                 \Idno\Common\ContentType::register($this->getNamespace() . '\\RepliesContentType');
             }
         }

@@ -19,11 +19,11 @@
 
                 $users       = User::get(array(), array(), 99999, 0); // TODO: make this more complete / efficient
                 $remoteusers = RemoteUser::get(array(), array(), 99999, 0);
-
                 $users = array_merge($users, $remoteusers);
+                $invitations = Invitation::get();
 
                 $t        = \Idno\Core\site()->template();
-                $t->body  = $t->__(array('users' => $users))->draw('admin/users');
+                $t->body  = $t->__(array('users' => $users, 'invitations' => $invitations))->draw('admin/users');
                 $t->title = 'User Management';
                 $t->drawPage();
 
@@ -64,18 +64,16 @@
                     case 'invite_users':
                         $emails = $this->getInput('invitation_emails');
 
-                        preg_match_all('/[a-z\d._%+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/i', $emails, $matches);
+                        preg_match_all('/[a-z\d._%\+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/i', $emails, $matches);
 
                         $invitation_count = 0;
-
                         if (!empty($matches[0])) {
                             if (is_array($matches[0])) {
                                 foreach ($matches[0] as $email) {
-                                    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                                        if (!($user = User::getByEmail($email))) {
-                                            if ((new Invitation())->sendToEmail($email) !== 0) {
-                                                $invitation_count++;
-                                            }
+                                    if (!($user = User::getByEmail($email))) {
+                                        $invitation = new Invitation();
+                                        if ($invitation->sendToEmail($email, \Idno\Core\site()->session()->currentUser()->email) !== 0) {
+                                            $invitation_count++;
                                         }
                                     }
                                 }
@@ -90,22 +88,49 @@
                             \Idno\Core\site()->session()->addMessage("No email addresses were found or all the people you invited are already members of this site.");
                         }
                         break;
-                    case 'add_user':
-                        $name       = $this->getInput('name');
-                        $handle     = trim($this->getInput('handle'));
-                        $email      = trim($this->getInput('email'));
+                    case 'remove_invitation':
+                        $invitation_id = $this->getInput('invitation_id');
 
-                        $password = "";
-                        //Initialize a random desired length
-                        $desired_length = rand(8, 12);
-                        for($length = 0; $length < $desired_length; $length++) {
-                            //Append a random ASCII character (including symbols)
-                            $password .= chr(rand(32, 126));
+                        if ($invitation = Invitation::getByID($invitation_id)) {
+                            if ($invitation->delete()) {
+                                \Idno\Core\site()->session()->addMessage("The invitation was removed.");
+                            }
                         }
+
+                        break;
+                    case 'resend_invitation':
+
+                        $invitation_id = $this->getInput('invitation_id');
+
+                        if ($invitation = Invitation::getByID($invitation_id)) {
+                            $email = $invitation->email;
+                            if ($invitation->delete()) {
+                                $new_invitation = new Invitation();
+                                if ($new_invitation->sendToEmail($email)) {
+                                    \Idno\Core\site()->session()->addMessage("The invitation was resent.");
+                                }
+                            }
+                        }
+
+                        break;
+                    case 'add_user':
+
+                        if (!\Idno\Core\site()->config()->canAddUsers()) {
+                            \Idno\Core\site()->session()->addMessage("You can't add any more users to your site.");
+                            break;
+                        }
+
+                        $name      = $this->getInput('name');
+                        $handle    = trim($this->getInput('handle'));
+                        $email     = trim($this->getInput('email'));
+                        $password  = trim($this->getInput('password1'));
+                        $password2 = trim($this->getInput('password2'));
 
                         $user = new \Idno\Entities\User();
 
-                        if (empty($handle) && empty($email)) {
+                        if (empty($password) || $password != $password2) {
+                            \Idno\Core\site()->session()->addMessage("Please make sure your passwords match and aren't empty.");
+                        } else if (empty($handle) && empty($email)) {
                             \Idno\Core\site()->session()->addMessage("Please enter a username and email address.");
                         } else if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                             if (
@@ -145,9 +170,59 @@
                         }
 
                         if (!empty($user->_id)) {
-                            \Idno\Core\site()->session()->addMessage("User registered with password $password - better mail that to them now!");
+                            \Idno\Core\site()->session()->addMessage("User " . $user->getHandle() . " was created. You may wish to email them to let them know.");
                         } else {
                             \Idno\Core\site()->session()->addMessageAtStart("We couldn't register that user.");
+                        }
+                        break;
+                    case 'block_emails':
+                        $emails = $this->getInput('blocked_emails');
+                        preg_match_all('/[a-z\d._%+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/i', $emails, $matches);
+
+                        $block_count = 0;
+
+                        if (!empty($matches[0])) {
+                            if (is_array($matches[0])) {
+                                foreach ($matches[0] as $email) {
+                                    if (\Idno\Core\site()->config()->addBlockedEmail($email)) {
+                                        $block_count++;
+                                    }
+                                }
+                                \Idno\Core\site()->config()->save();
+                            }
+                        }
+
+                        if ($block_count > 1) {
+                            \Idno\Core\site()->session()->addMessage("{$block_count} emails were blocked.");
+                        } else if ($block_count == 1) {
+                            \Idno\Core\site()->session()->addMessage("The email address was blocked.");
+                        } else {
+                            \Idno\Core\site()->session()->addMessage("No email addresses were found.");
+                        }
+                        break;
+                    case 'unblock_emails':
+                        $emails = $this->getInput('blocked_emails');
+                        preg_match_all('/[a-z\d._%+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/i', $emails, $matches);
+
+                        $block_count = 0;
+
+                        if (!empty($matches[0])) {
+                            if (is_array($matches[0])) {
+                                foreach ($matches[0] as $email) {
+                                    if (\Idno\Core\site()->config()->removeBlockedEmail($email)) {
+                                        $block_count++;
+                                    }
+                                }
+                                \Idno\Core\site()->config()->save();
+                            }
+                        }
+
+                        if ($block_count > 1) {
+                            \Idno\Core\site()->session()->addMessage("{$block_count} emails were unblocked.");
+                        } else if ($block_count == 1) {
+                            \Idno\Core\site()->session()->addMessage("The email address was unblocked.");
+                        } else {
+                            \Idno\Core\site()->session()->addMessage("No email addresses were found.");
                         }
                         break;
                 }
@@ -158,4 +233,3 @@
 
         }
     }
-?>

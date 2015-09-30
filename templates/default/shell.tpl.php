@@ -33,11 +33,11 @@
         if (\Idno\Core\site()->session()->isLoggedIn()) {
 
             ?>
-            <link rel="manifest" href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>chrome/manifest.json">
+            <!-- <link rel="manifest" href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>chrome/manifest.json"> -->
         <?php
             if (Idno\Core\site()->isSecure()) {
         ?>
-            <script>
+            <!-- <script>
                 window.addEventListener('load', function () {
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.register('<?=\Idno\Core\site()->config()->getDisplayURL()?>chrome/service-worker.js', {scope: '/'})
@@ -50,7 +50,7 @@
                             });
                     }
                 });
-            </script>
+            </script> -->
         <?php
         }
 
@@ -245,6 +245,11 @@
         } else {
 
             ?>
+            <style>
+                body {
+                    padding-top: 0px !important; /* 60px to make the container go all the way to the bottom of the topbar */
+                }
+            </style>
             <div style="height: 1em;"><br/></div>
         <?php
 
@@ -291,19 +296,21 @@
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/jquery-pjax/' ?>jquery.pjax.js"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/underscore/underscore-min.js' ?>"
         type="text/javascript"></script>
-<script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/bootstrap-typeahead.js' ?>"
+<!--<script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/bootstrap-typeahead.js' ?>"
         type="text/javascript"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/mention.js' ?>"
-        type="text/javascript"></script>
+        type="text/javascript"></script> -->
 
-
-<!-- Flexible media player -->
-<script
-    src="<?= \Idno\Core\site()->config()->getDisplayURL() ?>external/mediaelement/build/mediaelement-and-player.min.js"></script>
-<link rel="stylesheet"
-      href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>external/mediaelement/build/mediaelementplayer.css"/>
 
 <?php
+
+    if (!empty(\Idno\Core\site()->config()->assets)) {
+        foreach(\Idno\Core\site()->config()->assets as $asset => $enabled) {
+            if (!empty($enabled)) {
+                echo $this->draw('assets/' . $asset);
+            }
+        }
+    }
 
     if (\Idno\Core\site()->session()->isLoggedIn()) {
 
@@ -328,12 +335,6 @@
     if (\Idno\Core\site()->session()->isLoggedOn()) {
         echo $this->draw('js/mentions');
     }
-?>
-
-<!-- Video shim -->
-<script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/fitvids/jquery.fitvids.min.js' ?>"></script>
-
-<?php
     // Load javascript assets
     if ((\Idno\Core\site()->currentPage()) && $scripts = \Idno\Core\site()->currentPage->getAssets('javascript')) {
         foreach ($scripts as $script) {
@@ -360,9 +361,6 @@
     }
 
     $(document).ready(function () {
-        annotateContent();
-    })
-    $(document).on('pjax:complete', function () {
         annotateContent();
     });
 

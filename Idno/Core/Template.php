@@ -26,6 +26,9 @@
             // We can also extend templates with HTML or other content
             public $rendered_extensions = array();
 
+            // Keep track of the HTML purifier
+            public $purifier = false;
+
             /**
              * On construction, detect the template type
              */
@@ -34,6 +37,11 @@
                 if (!($template instanceof Template)) {
                     $this->detectTemplateType();
                 }
+
+                assert('\Idno\Core\site()->config()->site_secret /* Site secret not set */');
+                \Bonita\Main::siteSecret(\Idno\Core\site()->config()->site_secret);
+
+                $this->purifier = new Purifier();
 
                 return parent::__construct($template);
             }
@@ -217,12 +225,14 @@
 
             /**
              * Sanitize HTML in a large block of text, removing XSS and other vulnerabilities.
-             * This works by calling the text/filter event, note that currently there is no native implementation.
+             * This works by calling the text/filter event, as well as any built-in purifier.
              * @param type $html
              */
             function sanitize_html($html)
             {
-                return site()->triggerEvent('text/filter', [], $html);
+                $html = site()->triggerEvent('text/filter', [], $html);
+                
+                return $html;
             }
 
             /**
@@ -275,6 +285,10 @@
                     $url = $matches[1];
                     $tag = str_replace('#', '', $matches[1]);
 
+                    if (preg_match('/\#[0-9]{1,3}$/', $matches[1])) {
+                        return $matches[1];
+                    }
+
                     if (preg_match('/\#[A-Fa-f0-9]{6}/', $matches[1])) {
                         return $matches[1];
                     }
@@ -294,13 +308,14 @@
             function sampleParagraph($html_text, $paras = 1)
             {
                 $sample = '';
-                $dom = new \DOMDocument;
+                $dom    = new \DOMDocument;
                 $dom->loadHTML($html_text);
                 if ($p = $dom->getElementsByTagName('p')) {
                     for ($i = 0; $i < $paras; $i++) {
                         $sample .= $p->item($i)->textContent;
                     }
                 }
+
                 return $sample;
             }
 
@@ -320,7 +335,11 @@
                     substr($url, 0, 4) == 'sms:' ||
                     substr($url, 0, 6) == 'skype:' ||
                     substr($url, 0, 5) == 'xmpp:' ||
-                    substr($url, 0, 5) == 'facetime:'
+                    substr($url, 0, 4) == 'sip:' ||
+                    substr($url, 0, 4) == 'ssh:' ||
+                    substr($url, 0, 8) == 'spotify:' ||
+                    substr($url, 0, 8) == 'bitcoin:' ||
+                    substr($url, 0, 9) == 'facetime:'
                 )
                     ? $url
                     : 'http://' . $url;
@@ -397,15 +416,6 @@
             }
 
             /**
-             * Returns a sanitized version of the current page URL
-             * @return string
-             */
-            function getCurrentURL()
-            {
-                return \Idno\Core\site()->config()->url . substr($_SERVER['REQUEST_URI'], 1);
-            }
-
-            /**
              * Returns a version of the current page URL with the specified variable removed from the address line
              * @param string $variable_name
              * @return string
@@ -420,6 +430,29 @@
                 if (!empty($components['query'])) $url .= '?' . $components['query'];
 
                 return $url;
+            }
+
+            /**
+             * Returns a sanitized version of the current page URL
+             * @return string
+             */
+            function getCurrentURL()
+            {
+                $base_url = site()->config()->getDisplayURL();
+                $path     = '';
+                if ($components = parse_url($base_url)) {
+                    if ($components['path'] != '/') {
+                        $path = substr($components['path'], 1);
+                    }
+                }
+                $request_uri = substr($_SERVER['REQUEST_URI'], 1);
+                if (!empty($path)) {
+                    if (substr($request_uri, 0, strlen($path)) == $path) {
+                        $request_uri = substr($request_uri, strlen($path));
+                    }
+                }
+
+                return \Idno\Core\site()->config()->getDisplayURL() . $request_uri;
             }
 
             /**

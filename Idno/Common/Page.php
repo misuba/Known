@@ -53,8 +53,10 @@
 
             function init()
             {
-                header('X-Powered-By: https://withknown.com');
-                header('X-Clacks-Overhead: GNU Terry Pratchett');
+                if (!defined('KNOWN_UNIT_TEST')) { // Don't do header stuff in unit tests
+                    header('X-Powered-By: https://withknown.com');
+                    header('X-Clacks-Overhead: GNU Terry Pratchett');
+                }
                 if ($template = $this->getInput('_t')) {
                     if (\Idno\Core\site()->template()->templateTypeExists($template)) {
                         \Idno\Core\site()->template()->setTemplateType($template);
@@ -142,7 +144,7 @@
                     $this->parseJSONPayload();
                     $return = $this->postContent();
                 } else {
-                    throw new \Exception('Action tokens are invalid.');
+                    throw new \Exception('The page you were on timed out.');
                 }
 
                 if (\Idno\Core\site()->session()->isAPIRequest()) {
@@ -204,7 +206,7 @@
                     $this->parseJSONPayload();
                     $return = $this->putContent();
                 } else {
-                    throw new \Exception('Action tokens are invalid.');
+                    throw new \Exception('The page you were on timed out.');
                 }
 
                 if (\Idno\Core\site()->session()->isAPIRequest()) {
@@ -263,7 +265,7 @@
                     $this->parseJSONPayload();
                     $return = $this->deleteContent();
                 } else {
-                    throw new \Exception('Action tokens are invalid.');
+                    throw new \Exception('The page you were on timed out.');
                 }
 
                 if (\Idno\Core\site()->session()->isAPIRequest()) {
@@ -503,9 +505,20 @@
                     }
                     */
 
-                    if (!\Idno\Core\site()->session()->isAPIRequest() || $this->response == 200) {
+                    if (!\Idno\Core\site()->config()->session_cookies) {
+                        $t = \Idno\Core\site()->template(); /* @var $t \Idno\Core\Template */
+                        $location = $t->getURLWithVar('sid', session_id());
+                    }
+
+                    if (\Idno\Core\site()->session()->isAPIRequest()) {
+                        echo json_encode([
+                            'location' => $location
+                        ]);
+                    }
+                    elseif (!\Idno\Core\site()->session()->isAPIRequest() || $this->response == 200) {
                         header('Location: ' . $location);
                     }
+                    
                     if ($exit) {
                         exit;
                     }
@@ -603,6 +616,29 @@
                         $this->deniedContent();
                     }
                 }
+            }
+
+            /**
+             * Checks for an HTTP referrer; denies access if one doesn't exist
+             */
+            function referrerGatekeeper()
+            {
+                if (empty(\Idno\Core\site()->config()->ignore_referrer)) {
+                    if (!\Idno\Core\site()->session()->isAPIRequest()) {
+                        $referrer = $this->getReferrer();
+                        if (empty($referrer)) {
+                            $this->deniedContent();
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Because users of HTTP "referer" often can't spell.
+             */
+            function refererGatekeeper()
+            {
+                $this->referrerGatekeeper();
             }
 
             /**
@@ -809,6 +845,20 @@
             }
 
             /**
+             * Get the referrer information for the current page.
+             */
+            function getReferrer() {
+                
+                $referrer = $_SERVER['HTTP_REFERER'];
+                
+                if (empty($referrer)) {
+                     // TODO: Try other ways - e.g. for nginx
+                }
+                
+                return $referrer;
+            }
+            
+            /**
              * Detects whether the current web browser accepts the given content type.
              * @param string $contentType The MIME content type.
              * @return bool
@@ -874,7 +924,22 @@
              */
             public function setLastModifiedHeader($timestamp)
             {
-                header('Last-Modified: ' . self::timestampToRFC2616($timestamp));
+                header('Last-Modified: ' . \Idno\Core\Time::timestampToRFC2616($timestamp));
+            }
+            
+            /**
+             * Simplify if modified since checks.
+             * Set a 304 not modified if If-Modified-Since header is less than the given timestamp.
+             * @param type $timestamp Timestamp to check
+             */
+            public function lastModifiedGatekeeper($timestamp) {
+                $headers = $this->getallheaders();
+                if (isset($headers['If-Modified-Since'])) {
+                    if (strtotime($headers['If-Modified-Since']) <= $timestamp) { 
+                        header('HTTP/1.1 304 Not Modified');
+                        exit;
+                    }
+                }
             }
 
             /**
@@ -955,15 +1020,6 @@
 
 
                 return $page;
-            }
-
-            /**
-             * Convert a unix timestamp into an RFC2616 (HTTP) compatible date.
-             * @param type $timestamp
-             */
-            public static function timestampToRFC2616($timestamp)
-            {
-                return gmdate('D, d M Y H:i:s T', (int)$timestamp);
             }
 
         }

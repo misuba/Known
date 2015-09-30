@@ -27,11 +27,12 @@
             public $public_pages;
             public $syndication;
             public $logging;
-            public static $site;
+            public static $site; /* @var \Idno\Core\Idno $site */
             public $currentPage;
             public $known_hub;
             public $helper_robot;
             public $reader;
+            public $cache;
 
             function init()
             {
@@ -94,6 +95,12 @@
                 $this->logging      = new Logging($this->config->log_level);
                 $this->reader       = new Reader();
                 $this->helper_robot = new HelperRobot();
+                
+                // Attempt to create a cache object, making use of support present on the system
+                if (extension_loaded('xcache')) {
+                    $this->cache = new \Idno\Caching\XCache();
+                }
+                // TODO: Support other persistent caching methods
 
                 // No URL is a critical error, default base fallback is now a warning (Refs #526)
                 if (!$this->config->url) throw new \Exception('Known was unable to work out your base URL! You might try setting url="http://yourdomain.com/" in your config.ini');
@@ -130,6 +137,9 @@
                 /** Homepage */
                 $this->addPageHandler('', '\Idno\Pages\Homepage');
                 $this->addPageHandler('/', '\Idno\Pages\Homepage');
+                $this->addPageHandler('/feed\.xml', '\Idno\Pages\Feed');
+                $this->addPageHandler('/feed/?', '\Idno\Pages\Feed');
+                $this->addPageHandler('/rss\.xml', '\Idno\Pages\Feed');
                 $this->addPageHandler('/content/([A-Za-z\-\/]+)+', '\Idno\Pages\Homepage');
 
                 /** Individual entities / posting / deletion */
@@ -232,6 +242,15 @@
             function &logging()
             {
                 return $this->logging;
+            }
+            
+            /**
+             * Return a persistent cache object.
+             * @return \Idno\Caching\PersistentCache
+             */
+            function &cache() 
+            {
+                return $this->cache;
             }
 
             /**
@@ -368,6 +387,9 @@
             function addPageHandler($pattern, $handler, $public = false)
             {
                 if (defined('KNOWN_SUBDIRECTORY')) {
+                    if (substr($pattern, 0, 1) != '/') {
+                        $pattern = '/' . $pattern;
+                    }
                     $pattern = '/' . KNOWN_SUBDIRECTORY . $pattern;
                 }
                 if (class_exists($handler)) {
@@ -525,7 +547,7 @@
              */
             function version()
             {
-                return '0.8';
+                return '0.8.4';
             }
 
             /**
@@ -541,15 +563,17 @@
              * Retrieve a machine-readale version of Known's version number
              * @return string
              */
-            function machineVersion() {
-                return '2015051602';
+            function machineVersion()
+            {
+                return '2015092801';
             }
 
             /**
              * Alias for getMachineVersion
              * @return string
              */
-            function getMachineVersion() {
+            function getMachineVersion()
+            {
                 return $this->machineVersion();
             }
 
@@ -605,12 +629,16 @@
                 if ($user = \Idno\Entities\User::getByUUID($user_id)) {
 
                     // Remote users can't ever create anything :( - for now
-                    if ($user instanceof \Idno\Entities\RemoteUser)
+                    if ($user instanceof \Idno\Entities\RemoteUser) {
                         return false;
+                    }
 
                     // But local users can
-                    if ($user instanceof \Idno\Entities\User)
-                        return true;
+                    if ($user instanceof \Idno\Entities\User) {
+                        if (empty($user->read_only)) {
+                            return true;
+                        }
+                    }
 
                 }
 
@@ -729,11 +757,19 @@
                     || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https');
             }
 
+            /**
+             * This is a state dependant object, and so can not be serialised.
+             * @return array
+             */
+            function __sleep()
+            {
+                return [];
+            }
         }
 
         /**
          * Helper function that returns the current site object
-         * @return \Idno\Core\Idno
+         * @return \Idno\Core\Idno $site
          */
         function &site()
         {
