@@ -10,7 +10,7 @@
     if (empty($vars['feed_view'])) {
         ?>
         <h2 class="photo-title p-name"><a
-                href="<?= $vars['object']->getURL(); ?>"><?= htmlentities(strip_tags($vars['object']->getTitle()), ENT_QUOTES, 'UTF-8'); ?></a>
+                href="<?= $vars['object']->getDisplayURL(); ?>"><?= htmlentities(strip_tags($vars['object']->getTitle()), ENT_QUOTES, 'UTF-8'); ?></a>
         </h2>
     <?php
     }
@@ -28,7 +28,7 @@
 
             $src = \Idno\Core\site()->config()->sanitizeAttachmentURL($src);
             $mainsrc = \Idno\Core\site()->config()->sanitizeAttachmentURL($mainsrc);
-            
+
             // Patch to correct certain broken URLs caused by https://github.com/idno/known/issues/526
             $src = preg_replace('/^(https?:\/\/\/)/', \Idno\Core\site()->config()->getDisplayURL(), $src);
             $mainsrc = preg_replace('/^(https?:\/\/\/)/', \Idno\Core\site()->config()->getDisplayURL(), $mainsrc);

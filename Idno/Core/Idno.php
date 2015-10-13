@@ -65,6 +65,10 @@
                             $db       = "Idno\\Data\\{$this->config->database}";
                             $this->db = new $db();
                         }
+                        if (empty($this->db) && class_exists("{$this->config->database}")) {
+                            $db       = "{$this->config->database}";
+                            $this->db = new $db();
+                        }
                         if (empty($this->db)) {
                             $this->db = new DataConcierge();
                         }
@@ -192,8 +196,9 @@
                 $this->addPageHandler('/begin/connect\-forwarder/?', '\Idno\Pages\Onboarding\ConnectForwarder');
                 $this->addPageHandler('/begin/publish/?', '\Idno\Pages\Onboarding\Publish');
 
+                // These must be loaded last
+                $this->plugins = new Plugins();
                 $this->themes  = new Themes();
-                $this->plugins = new Plugins(); // This must be loaded last
 
             }
 
@@ -547,7 +552,7 @@
              */
             function version()
             {
-                return '0.8.4';
+                return '0.8.5';
             }
 
             /**
@@ -565,7 +570,7 @@
              */
             function machineVersion()
             {
-                return '2015092801';
+                return '2015101301';
             }
 
             /**

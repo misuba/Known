@@ -58,7 +58,7 @@
 					    }
 					}
 		 			
-		 			if (abs(time() - $time) < 10800)
+		 			if (abs(time() - $time) < \Idno\Core\site()->config()->form_token_expiry)
 			 			if (self::token($action, $time) == $token) {
 			 				return true;
 			 			}

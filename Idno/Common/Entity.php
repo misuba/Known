@@ -938,8 +938,12 @@
 
             function getDescription()
             {
-                if (!empty($this->description))
+                if (!empty($this->description)) {
+                    if (is_array($this->description)) {
+                        $this->description = implode(' ', $this->description);
+                    }
                     return $this->description;
+                }
 
                 return '';
             }
@@ -1498,7 +1502,11 @@
              */
             function getDisplayURL()
             {
-                return $this->getURL();
+                $url = $this->getURL();
+                if (\Idno\Core\site()->config()->unique_urls) {
+                    $url = \Idno\Core\site()->template()->getURLWithVar('rnd', rand(0,999999), $url);
+                }
+                return $url;
             }
 
             /**
