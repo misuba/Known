@@ -72,6 +72,8 @@
                 </div>
             </div>
 
+            <?=$this->draw('admin/home/settings/details')?>
+
             <!----------->
 
             <div class="row">
@@ -101,6 +103,7 @@
                 if (\Idno\Core\site()->config()->walled_garden == true || \Idno\Core\site()->config()->canMakeSitePrivate()) {
 
                     ?>
+
                     <!---------->
                     <div class="row">
                         <div class="col-md-2">
@@ -122,22 +125,35 @@
 
             ?>
 
-            <!---------->
+            <?php
 
-            <div class="row">
-                <div class="col-md-2">
-                    <p><label class="control-label" for="show_privacy"><strong>Per-post privacy</strong></label></p>
-                </div>
-                <div class="config-toggle col-md-4">
-                    <input type="checkbox" data-toggle="toggle" data-onstyle="info" data-on="Yes" data-off="No"
-                           name="show_privacy" id="show_privacy"
-                           value="true" <?php if (\Idno\Core\site()->config()->show_privacy == true) echo 'checked'; ?>>
-                </div>
-                <div class="col-md-6"><p class="config-desc">
-                        Show per-post privacy settings.
-                    </p>
-                </div>
-            </div>
+                if (\Idno\Core\site()->config()->show_privacy == true || \Idno\Core\site()->config()->canMakeSitePrivate()) {
+
+                    ?>
+                    <!---------->
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            <p><label class="control-label" for="show_privacy"><strong>Per-post privacy</strong></label>
+                            </p>
+                        </div>
+                        <div class="config-toggle col-md-4">
+                            <input type="checkbox" data-toggle="toggle" data-onstyle="info" data-on="Yes" data-off="No"
+                                   name="show_privacy" id="show_privacy"
+                                   value="true" <?php if (\Idno\Core\site()->config()->show_privacy == true) echo 'checked'; ?>>
+                        </div>
+                        <div class="col-md-6"><p class="config-desc">
+                                Show per-post privacy settings.
+                            </p>
+                        </div>
+                    </div>
+                    <?php
+
+                }
+
+                echo $this->draw('admin/home/settings/privacy');
+                
+            ?>
 
             <!---------->
 
@@ -199,6 +215,8 @@
             </div>
 
             <!---------->
+
+            <?=$this->draw('admin/home/settings/technical')?>
 
             <?=$this->draw('admin/home/settings')?>
 

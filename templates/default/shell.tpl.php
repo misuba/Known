@@ -126,6 +126,13 @@
         }
 
     ?>
+    <!-- AMP versions -->
+    <link rel="amphtml" href="<?php
+
+        /* @var \Idno\Core\Template $this */
+        echo $this->getCurrentURLWithVar('_t', 'amp');
+
+    ?>">
 
     <!-- We need jQuery at the top of the page -->
     <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/jquery/' ?>jquery.min.js"></script>
@@ -296,19 +303,21 @@
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/jquery-pjax/' ?>jquery.pjax.js"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/underscore/underscore-min.js' ?>"
         type="text/javascript"></script>
-<script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/bootstrap-typeahead.js' ?>"
+<!--<script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/bootstrap-typeahead.js' ?>"
         type="text/javascript"></script>
 <script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/mention/mention.js' ?>"
-        type="text/javascript"></script>
+        type="text/javascript"></script> -->
 
-
-<!-- Flexible media player -->
-<script
-    src="<?= \Idno\Core\site()->config()->getDisplayURL() ?>external/mediaelement/build/mediaelement-and-player.min.js"></script>
-<link rel="stylesheet"
-      href="<?= \Idno\Core\site()->config()->getDisplayURL() ?>external/mediaelement/build/mediaelementplayer.css"/>
 
 <?php
+
+    if (!empty(\Idno\Core\site()->config()->assets)) {
+        foreach(\Idno\Core\site()->config()->assets as $asset => $enabled) {
+            if (!empty($enabled)) {
+                echo $this->draw('assets/' . $asset);
+            }
+        }
+    }
 
     if (\Idno\Core\site()->session()->isLoggedIn()) {
 
@@ -333,12 +342,6 @@
     if (\Idno\Core\site()->session()->isLoggedOn()) {
         echo $this->draw('js/mentions');
     }
-?>
-
-<!-- Video shim -->
-<script src="<?= \Idno\Core\site()->config()->getDisplayURL() . 'external/fitvids/jquery.fitvids.min.js' ?>"></script>
-
-<?php
     // Load javascript assets
     if ((\Idno\Core\site()->currentPage()) && $scripts = \Idno\Core\site()->currentPage->getAssets('javascript')) {
         foreach ($scripts as $script) {

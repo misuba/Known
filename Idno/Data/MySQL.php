@@ -32,7 +32,9 @@
                         header('Location: ' . \Idno\Core\site()->config()->forward_on_empty);
                         exit;
                     } else {
-                        //echo '<p>Unfortunately we couldn\'t connect to the database.</p>';
+                        
+                        http_response_code(500);
+                        
                         if (\Idno\Core\site()->config()->debug) {
                             $message = '<p>' . $e->getMessage() . '</p>';
                             $message .= '<p>' . $connection_string . '</p>';
@@ -105,6 +107,23 @@
                     }
                 } catch (\Exception $e) {
                     //\Idno\Core\site()->logging()->log($e->getMessage());
+                    error_log($e->getMessage());
+                }
+
+                return false;
+            }
+
+            /**
+             * Optimize tables - this can reduce overall database storage space and query time
+             * @return bool
+             */
+            function optimize()
+            {
+                try {
+                    $this->client->query("optimize table entities");
+                    $this->client->query("optimize table metadata");
+                    $this->client->query("optimize table session");
+                } catch (\Exception $e) {
                     error_log($e->getMessage());
                 }
 
@@ -197,7 +216,7 @@
                 }*/
 
                 if (empty($array['_id'])) {
-                    $array['_id'] = md5(rand(0, 9999) . time());
+                    $array['_id'] = md5(rand() . microtime(true));
                 }
                 if (empty($array['uuid'])) {
                     $array['uuid'] = \Idno\Core\site()->config()->getURL() . 'view/' . $array['_id'];
@@ -225,6 +244,20 @@
                 }
                 if (!empty($array['body'])) {
                     $search .= strip_tags($array['body']);
+                }
+                if (!empty($array['handle'])) {
+                    $search .= $array['handle'] . ' ';
+                }
+                if (!empty($array['profile'])) {
+                    if (is_array($array['profile'])) {
+                        foreach($array['profile'] as $profile_item) {
+                            if (is_array($profile_item)) {
+
+                            } else {
+                                $search .= strip_tags($profile_item) . ' ';
+                            }
+                        }
+                    }
                 }
                 if (empty($array['entity_subtype'])) {
                     $array['entity_subtype'] = 'Idno\\Common\\Entity';
@@ -623,15 +656,17 @@
                                 $subwhere[] = $instring;
                             }
                             if ($key == '$search') {
-                                $val = $value[0]; // The search query is always in $value position [0] for now
-                                if (strlen($val) > 5) {
-                                    $subwhere[]                                  = "match (`search`) against (:nonmdvalue{$non_md_variables})";
-                                    $variables[":nonmdvalue{$non_md_variables}"] = $val;
-                                } else {
-                                    $subwhere[]                                  = "`search` like :nonmdvalue{$non_md_variables}";
-                                    $variables[":nonmdvalue{$non_md_variables}"] = '%' . $val . '%';
+                                if(!empty($value[0])) {
+                                    $val = $value[0]; // The search query is always in $value position [0] for now
+                                    if (strlen($val) > 5) {
+                                        $subwhere[]                                  = "match (`search`) against (:nonmdvalue{$non_md_variables})";
+                                        $variables[":nonmdvalue{$non_md_variables}"] = $val;
+                                    } else {
+                                        $subwhere[]                                  = "`search` like :nonmdvalue{$non_md_variables}";
+                                        $variables[":nonmdvalue{$non_md_variables}"] = '%' . $val . '%';
+                                    }
+                                    $non_md_variables++;
                                 }
-                                $non_md_variables++;
                             }
                         }
                     }

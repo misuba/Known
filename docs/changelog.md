@@ -2,6 +2,53 @@
 
 Starting with version 0.6.4, this is a list of changes in the self-hosted, open source version of Known.
 
+0.8.5
+-----
+October 13, 2015
+
+* Experimental AMP support! See http://ampproject.org for more details
+* Better support for embedded content
+* A slew of indieweb improvements, including upgraded micropub support for actions like likes and reshares
+* A command line tool (with extensible plugin interface) to automatically create a config.ini file, among other things
+* Themes now take template precedence over plugins - so a theme can create a new style for a plugin-provided feature
+* Known now works better under FastCGI on some shared hosts
+* Lots of API fixes and consistency changes under the hood
+
+0.8.4
+-----
+September 28, 2015
+
+* See who you've invited to Known, and resend or rescind invitations
+* Hashtag linking improvements
+* Added support for SIP, Bitcoin and Spotify profile fields
+* SVG upload support
+* Numerous interface improvements
+* Fixed aggressive caching of Known posts
+* Assorted API fixes and improvements
+* Introduced HTML purifier component
+* Webmentions no longer strip HTML
+
+0.8.3.1
+-------
+August 19, 2015
+
+* Fixing a bug with account settings
+
+0.8.3
+-----
+August 18, 2015
+
+* Block users by email address
+* Fixes a bug with per-item access permissions in location check-ins
+* Improved Convoy display for syndicated content
+* Most content types now have a rich text editor
+* Improved brid.gy interactions
+* Improved audio player display
+* Improved RSS feed display
+* Fixed an issue with saving configuration
+* Experimental Postgres support
+* Such dogeon support so removed wow
+
 0.8.2
 -----
 July 22, 2015

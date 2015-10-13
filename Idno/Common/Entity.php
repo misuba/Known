@@ -13,6 +13,7 @@
     namespace Idno\Common {
 
         use Idno\Core\Webmention;
+        use Idno\Entities\File;
         use Idno\Entities\User;
 
         class Entity extends Component implements EntityInterface
@@ -260,13 +261,26 @@
             }
 
             /**
-             * Retrieves the name of the content type associated with this class
+             * Retrieves the category name of the content type associated with this class
              * @return string
              */
             function getContentTypeCategoryTitle()
             {
                 if ($contentType = $this->getContentType()) {
                     return $contentType->getCategoryTitle();
+                }
+
+                return '';
+            }
+
+            /**
+             * Retrieves the name of the content type associated with this class
+             * @return string
+             */
+            function getContentTypeTitle()
+            {
+                if ($contentType = $this->getContentType()) {
+                    return $contentType->getTitle();
                 }
 
                 return '';
@@ -434,10 +448,9 @@
                 // Automatically add a slug (if one isn't set and this is a new entity)
 
                 if (!$this->getSlug() && empty($this->_id)) {
-                    error_log("Didn't get slug");
                     if (!($title = $this->getTitle())) {
                         if (!($title = $this->getDescription())) {
-                            $title = md5(time() . rand(0, 9999));
+                            $title = md5(rand() . microtime(true));
                         }
                     }
                     \Idno\Core\site()->logging()->log("Setting resilient slug", LOGLEVEL_DEBUG);
@@ -925,8 +938,12 @@
 
             function getDescription()
             {
-                if (!empty($this->description))
+                if (!empty($this->description)) {
+                    if (is_array($this->description)) {
+                        $this->description = implode(' ', $this->description);
+                    }
                     return $this->description;
+                }
 
                 return '';
             }
@@ -1127,8 +1144,9 @@
 
             function getShortDescription($words = 25)
             {
-                if (!empty($this->short_description))
+                if (!empty($this->short_description)) {
                     return $this->short_description;
+                }
 
                 $description = strip_tags($this->getDescription());
                 $description = implode(' ', array_slice(explode(' ', $description), 0, $words));
@@ -1404,6 +1422,12 @@
 
                 if ($attachments = $this->getAttachments()) {
                     foreach ($attachments as $attachment) {
+                        if (empty($attachment['mime-type'])) {
+                            $attachment['mime-type'] = 'application/octet-stream';
+                        }
+                        if (empty($attachment['length'])) {
+                            $attachment['length'] = 0;
+                        }
                         $object['attachments'][] = [
                             'url'       => preg_replace('/^(https?:\/\/\/)/u', \Idno\Core\site()->config()->url, $attachment['url']),
                             'mime-type' => $attachment['mime-type'],
@@ -1478,7 +1502,11 @@
              */
             function getDisplayURL()
             {
-                return $this->getURL();
+                $url = $this->getURL();
+                if (\Idno\Core\site()->config()->unique_urls) {
+                    $url = \Idno\Core\site()->template()->getURLWithVar('rnd', rand(0,999999), $url);
+                }
+                return $url;
             }
 
             /**
@@ -1721,7 +1749,7 @@
                                 if (is_array($item['properties']['content'])) {
                                     foreach ($item['properties']['content'] as $content) {
                                         if (!empty($content['value'])) {
-                                            $parsed_content = strip_tags($content['value']);
+                                            $parsed_content = \Idno\Core\site()->template()->sanitize_html($content['value']);
                                             if (!substr_count($mention['content'], $parsed_content)) {
                                                 $mention['content'] .= $parsed_content;
                                             }
@@ -1732,13 +1760,13 @@
                                 }
                             } else if (!empty($item['properties']['summary'])) {
                                 if (is_array($item['properties']['summary'])) {
-                                    $mention['content'] = strip_tags(implode(' ', $item['properties']['summary']));
+                                    $mention['content'] = \Idno\Core\site()->template()->sanitize_html(implode(' ', $item['properties']['summary']));
                                 } else {
                                     $mention['content'] = $item['properties']['summary'];
                                 }
                             } else if (!empty($item['properties']['name'])) {
                                 if (is_array($item['properties']['name'])) {
-                                    $mention['content'] = strip_tags(implode(' ', $item['properties']['name']));
+                                    $mention['content'] = \Idno\Core\site()->template()->sanitize_html(implode(' ', $item['properties']['name']));
                                 } else {
                                     $mention['content'] = $item['properties']['name'];
                                 }
@@ -1761,11 +1789,6 @@
                                     $mention['url'] = $item['properties']['url'];
                                 }
                             }
-                            if (!empty($item['properties']['in-reply-to']) && is_array($item['properties']['in-reply-to'])) {
-                                if (in_array($target, static::getStringURLs($item['properties']['in-reply-to']))) {
-                                    $mention['type'] = 'reply';
-                                }
-                            }
                             if (!empty($item['properties']['like']) && is_array($item['properties']['like'])) {
                                 if (in_array($target, static::getStringURLs($item['properties']['like']))) {
                                     $mention['type'] = 'like';
@@ -1785,6 +1808,11 @@
                                     if (in_array($target, static::getStringURLs($item['properties'][$verb]))) {
                                         $mention['type'] = 'share';
                                     }
+                                }
+                            }
+                            if (!empty($item['properties']['in-reply-to']) && is_array($item['properties']['in-reply-to'])) {
+                                if (in_array($target, static::getStringURLs($item['properties']['in-reply-to']))) {
+                                    $mention['type'] = 'reply';
                                 }
                             }
                             if (empty($mention['type'])) {

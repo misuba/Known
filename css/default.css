@@ -25,6 +25,11 @@ img {
     max-width: 100%;
 }
 
+.nav li {
+    /*line-height: 1.8em !important;*/
+    height: 2em;
+}
+
 .beforecontent {
     margin-bottom: 5em;
 }
@@ -38,6 +43,10 @@ img {
 
 .idno-content p {
     line-height: 1.5em !important;
+}
+
+.idno-content img {
+    height: auto;
 }
 
 .e-content p {
@@ -877,12 +886,25 @@ select, textarea, input[type="text"], input[type="password"], input[type="dateti
     border-top-color: #333333;
 }
 
+.navbar-right {
+    margin-bottom: 15px;
+}
+
 .dropdown-menu > li > a:hover, .dropdown-menu > li > a:focus, .dropdown-submenu:hover > a, .dropdown-submenu:focus > a {
     background-color: #73b2e3;
     background-image: none;
     background-repeat: repeat-x;
     color: #ffffff;
     text-decoration: none;
+}
+
+@media screen and (max-width: 767px) {
+    .navbar-nav .open .dropdown-menu {
+        float: left;
+    }
+    .navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse {
+        max-height: 100%;
+    }
 }
 
 .navbar {
@@ -1410,6 +1432,16 @@ tr.items {
 	line-height: 28px;
 }
 
+.sortable-pages .items td,
+.sortable-categories .items td {
+    cursor: move;
+}
+
+.sortable-pages .items.pages-no-category td,
+.sortable-categories .items.pages-no-category td {
+    cursor: default;
+}
+
 .btn-page {
 	margin-left: 10px;
 	padding: 4px 20px;
@@ -1648,4 +1680,73 @@ video {
 
 audio {
     width: 100%;
+}
+
+/* Member directory */
+
+.member-directory .member-name {
+    font-size: 1.3em;
+}
+
+.member-directory .member-icon {
+    height: 50px;
+}
+
+.member-directory .light-description a,
+.member-directory .light-description {    
+	color: #888;
+    margin-top: 0.5em;
+}
+
+.member-directory .fa-chevron-right {
+    font-size: 1.5em;
+    margin-top: 0.5em;
+}
+/* Syndication Panels */
+.panel-default > .panel-heading {
+    background-color: #f0f0f0;
+    border-color: #f0f0f0;
+    color: #fff;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-bottom: 1px solid #adadad;
+}
+.panel-default {
+    border-color: #adadad;
+    border-radius: 0px; 
+}
+.panel-title {
+	color:#999;
+	font-weight: 400;
+}
+.panel-group {
+	margin-bottom: 0px;
+	border-bottom: none;
+	margin-top: 10px;
+}
+textarea.form-control {
+    height: 10em;
+}
+/* File Uploader */
+.file-upload {
+	text-align: left;
+	border-radius: 10px;
+	border: 1px solid #dadada;
+	padding:1em;
+	background-color: #f4f4f4;
+	padding-left: 1.4em;
+}
+.btn-download {
+	font-size: 1.2em;
+	padding: 0;
+	background-color: #f4f4f4;
+	white-space: normal;
+	width: 100%;
+	text-align: left;
+}
+.btn-download:hover, .btn-download:focus {
+	color:#357ebd;
+}
+.file-upload small {
+	color:#666;
 }

@@ -17,6 +17,7 @@
                 'dbstring'             => 'mongodb://localhost:27017',
                 'dbname'               => 'known', // Default MongoDB database
                 'sessionname'          => 'known', // Default session name
+                'session_cookies'      => true,
                 'open_registration'    => true, // Can anyone register for this system?
                 'plugins'              => array( // Default plugins
                                                  'Status',
@@ -31,6 +32,10 @@
                                                  'IndiePub',
                                                  'Convoy'
                 ),
+                'assets'               => [      // Assets to be included
+                                                 'mediaelementplayer' => true,
+                                                 'fitvids'            => true,
+                ],
                 'themes'               => array(),
                 'antiplugins'          => array(),
                 'alwaysplugins'        => array(
@@ -46,7 +51,8 @@
                 'multi_syndication'    => true,
                 'wayback_machine'      => false,
                 'static_url'           => false,
-                'user_avatar_favicons' => true
+                'user_avatar_favicons' => true,
+                'form_token_expiry'    => 21600,
             );
 
             public $ini_config = array();
@@ -119,6 +125,7 @@
                         unset($config['session_path']);
                         unset($config['session_hash_function']);
                         unset($config['sessions_database']);
+                        unset($config['session_cookies']);
                         unset($config['cookie_jar']);
                         unset($config['proxy_string']);
                         unset($config['proxy_type']);
@@ -212,13 +219,18 @@
                 unset($array['proxy_type']);
                 unset($array['disable_ssl_verify']);
                 unset($array['known_hub']);
+                unset($array['known_hubs']);
                 unset($array['directloadplugins']);
 
                 if (\Idno\Core\site()->db()->saveRecord('config', $array)) {
                     $this->init();
+                    $this->load();
 
                     return true;
                 }
+
+                $this->init();
+                $this->load();
 
                 return false;
             }
@@ -238,6 +250,7 @@
                 $this->indieweb_citation         = false;
                 $this->indieweb_reference        = false;
                 $this->known_hub                 = false;
+                $this->known_hubs                = [];
                 $this->hub                       = 'https://withknown.superfeedr.com/';
                 $this->session_path              = session_save_path(); // Session path when not storing sessions in the database
                 $this->session_hash_function     = 'sha256'; // Default hash function
@@ -258,7 +271,7 @@
                     $this->dbname = preg_replace('/[^0-9a-z\.\-\_]/i', '', $this->host);
 
                     // Known now defaults to not including periods in database names for multitenant installs. Add
-                    // 'multitenant_periods = true' if you wish to override this.
+                    // 'multitenant_periods = true' to config.ini if you wish to override this.
                     if (empty($this->multitenant_periods)) {
                         $this->dbname = str_replace('.', '_', $this->dbname);
                     }
@@ -355,14 +368,34 @@
             }
 
             /**
+             * Make sure attachment URL is pointing to the right place
+             * @param $url
+             * @return mixed
+             */
+            function sanitizeAttachmentURL($url)
+            {
+                if (!empty(\Idno\Core\site()->config()->attachment_base_host)) {
+                    $host = parse_url($url, PHP_URL_HOST);
+
+                    return str_replace($host, \Idno\Core\site()->config()->attachment_base_host, $url);
+                }
+
+                return $url;
+            }
+
+            /**
              * Get a version of the URL without URI scheme or trailing slash
              * @return string
              */
-            function getSchemelessURL()
+            function getSchemelessURL($preceding_slashes = false)
             {
                 $url       = $this->getURL();
                 $urischeme = parse_url($url, PHP_URL_SCHEME);
-                $url       = str_replace($urischeme . '://', '', $url);
+                if ($preceding_slashes) {
+                    $url = str_replace($urischeme . ':', '', $url);
+                } else {
+                    $url = str_replace($urischeme . '://', '', $url);
+                }
                 if (substr($url, -1, 1) == '/') {
                     $url = substr($url, 0, strlen($url) - 1);
                 }
@@ -381,6 +414,78 @@
                 }
 
                 return $this->getDisplayURL();
+            }
+
+            /**
+             * Retrieve an array of email addresses that are blocked from registering on this site.
+             * @return array
+             */
+            function getBlockedEmails()
+            {
+                $emails = [];
+                if (!empty($this->blocked_emails)) {
+                    $emails = $this->blocked_emails;
+                }
+
+                return $emails;
+            }
+
+            /**
+             * Adds an email address to the blocked list
+             * @param $email
+             * @return array|bool
+             */
+            function addBlockedEmail($email)
+            {
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $emails   = $this->getBlockedEmails();
+                    $emails[] = trim(strtolower($email));
+
+                    return $this->blocked_emails = $emails;
+                }
+
+                return false;
+            }
+
+            /**
+             * Remove an email address from the blocklist
+             * @param $email
+             * @return array|bool
+             */
+            function removeBlockedEmail($email)
+            {
+                $count = 0;
+                $email = trim(strtolower($email));
+                if ($emails = $this->getBlockedEmails()) {
+                    foreach (array_keys($emails, $email, true) as $key) {
+                        $count++;
+                        unset($emails[$key]);
+                    }
+                    site()->config()->blocked_emails = $emails;
+
+                    return $count;
+                }
+
+                return false;
+            }
+
+            /**
+             * Is the specified email address blocked from registering?
+             * @param $email
+             * @return bool
+             */
+            function emailIsBlocked($email)
+            {
+                $email = trim(strtolower($email));
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    if ($emails = $this->getBlockedEmails()) {
+                        if (in_array($email, $emails)) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
             }
 
             /**

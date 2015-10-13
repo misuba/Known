@@ -32,8 +32,12 @@ IdnoPlugins/GooglePlus/
 IdnoPlugins/Google/
 IdnoPlugins/Markdown/
 IdnoPlugins/ApplyToJoin/
+IdnoPlugins/Groups/
+IdnoPlugins/LTI/
+IdnoPlugins/GenericFile/
 
 Themes/Ansel/
+Themes/KQED/
 
 error_log
 

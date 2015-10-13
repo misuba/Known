@@ -23,6 +23,7 @@
                 try {
                     $this->client = new \MongoClient(site()->config()->dbstring);
                 } catch (\MongoConnectionException $e) {
+                    http_response_code(500);
                     echo '<p>Unfortunately we couldn\'t connect to the database:</p><p>' . $e->getMessage() . '</p>';
                     exit;
                 }
@@ -37,6 +38,15 @@
             function getDatabase()
             {
                 return $this->database;
+            }
+
+            /**
+             * Performs database optimizations, depending on engine
+             * @return bool
+             */
+            function optimize()
+            {
+                return true;
             }
 
             /**

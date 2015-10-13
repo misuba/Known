@@ -144,7 +144,7 @@
                     $this->parseJSONPayload();
                     $return = $this->postContent();
                 } else {
-                    throw new \Exception('Action tokens are invalid.');
+                    throw new \Exception('The page you were on timed out.');
                 }
 
                 if (\Idno\Core\site()->session()->isAPIRequest()) {
@@ -206,7 +206,7 @@
                     $this->parseJSONPayload();
                     $return = $this->putContent();
                 } else {
-                    throw new \Exception('Action tokens are invalid.');
+                    throw new \Exception('The page you were on timed out.');
                 }
 
                 if (\Idno\Core\site()->session()->isAPIRequest()) {
@@ -265,7 +265,7 @@
                     $this->parseJSONPayload();
                     $return = $this->deleteContent();
                 } else {
-                    throw new \Exception('Action tokens are invalid.');
+                    throw new \Exception('The page you were on timed out.');
                 }
 
                 if (\Idno\Core\site()->session()->isAPIRequest()) {
@@ -505,9 +505,20 @@
                     }
                     */
 
-                    if (!\Idno\Core\site()->session()->isAPIRequest() || $this->response == 200) {
+                    if (!\Idno\Core\site()->config()->session_cookies) {
+                        $t = \Idno\Core\site()->template(); /* @var $t \Idno\Core\Template */
+                        $location = $t->getURLWithVar('sid', session_id());
+                    }
+
+                    if (\Idno\Core\site()->session()->isAPIRequest()) {
+                        echo json_encode([
+                            'location' => $location
+                        ]);
+                    }
+                    elseif (!\Idno\Core\site()->session()->isAPIRequest() || $this->response == 200) {
                         header('Location: ' . $location);
                     }
+                    
                     if ($exit) {
                         exit;
                     }
@@ -605,6 +616,38 @@
                         $this->deniedContent();
                     }
                 }
+            }
+
+            /**
+             * Checks for an HTTP referrer; denies access if one doesn't exist
+             */
+            function referrerGatekeeper()
+            {
+                if (empty(\Idno\Core\site()->config()->ignore_referrer)) {
+                    /*
+                     * BW 2015-10-01 - it turns out enterprise proxy servers strip referrer for security reasons.
+                     * As a result, I'm both commenting this out and telling people to change enterprise proxy server
+                     * vendor.
+                     *
+                     * To be fair, users have the right to strip out their referrer value, in the same way they have
+                     * the right to change their browser identification string. Probably another solution is required.
+                     *
+                     * if (!\Idno\Core\site()->session()->isAPIRequest()) {
+                        $referrer = $this->getReferrer();
+                        if (empty($referrer)) {
+                            $this->deniedContent();
+                        }
+                    }
+                    */
+                }
+            }
+
+            /**
+             * Because users of HTTP "referer" often can't spell.
+             */
+            function refererGatekeeper()
+            {
+                $this->referrerGatekeeper();
             }
 
             /**
@@ -811,6 +854,20 @@
             }
 
             /**
+             * Get the referrer information for the current page.
+             */
+            function getReferrer() {
+                
+                $referrer = $_SERVER['HTTP_REFERER'];
+                
+                if (empty($referrer)) {
+                     // TODO: Try other ways - e.g. for nginx
+                }
+                
+                return $referrer;
+            }
+            
+            /**
              * Detects whether the current web browser accepts the given content type.
              * @param string $contentType The MIME content type.
              * @return bool
@@ -888,8 +945,8 @@
                 $headers = $this->getallheaders();
                 if (isset($headers['If-Modified-Since'])) {
                     if (strtotime($headers['If-Modified-Since']) <= $timestamp) { 
-                        header('HTTP/1.1 304 Not Modified');
-                        exit;
+                        //header('HTTP/1.1 304 Not Modified');
+                        //exit;
                     }
                 }
             }

@@ -26,6 +26,9 @@
             // We can also extend templates with HTML or other content
             public $rendered_extensions = array();
 
+            // Keep track of the HTML purifier
+            public $purifier = false;
+
             /**
              * On construction, detect the template type
              */
@@ -37,6 +40,8 @@
 
                 assert('\Idno\Core\site()->config()->site_secret /* Site secret not set */');
                 \Bonita\Main::siteSecret(\Idno\Core\site()->config()->site_secret);
+
+                $this->purifier = new Purifier();
 
                 return parent::__construct($template);
             }
@@ -215,17 +220,19 @@
                 require_once dirname(dirname(dirname(__FILE__))) . '/external/MrClay_AutoP/AutoP.php';
                 $autop = new \MrClay_AutoP();
 
-                return $this->sanitize_html($autop->process($html));
+                return $autop->process($html);
             }
 
             /**
              * Sanitize HTML in a large block of text, removing XSS and other vulnerabilities.
-             * This works by calling the text/filter event, note that currently there is no native implementation.
+             * This works by calling the text/filter event, as well as any built-in purifier.
              * @param type $html
              */
             function sanitize_html($html)
             {
-                return site()->triggerEvent('text/filter', [], $html);
+                $html = site()->triggerEvent('text/filter', [], $html);
+                
+                return $html;
             }
 
             /**
@@ -278,6 +285,10 @@
                     $url = $matches[1];
                     $tag = str_replace('#', '', $matches[1]);
 
+                    if (preg_match('/\#[0-9]{1,3}$/', $matches[1])) {
+                        return $matches[1];
+                    }
+
                     if (preg_match('/\#[A-Fa-f0-9]{6}/', $matches[1])) {
                         return $matches[1];
                     }
@@ -324,7 +335,11 @@
                     substr($url, 0, 4) == 'sms:' ||
                     substr($url, 0, 6) == 'skype:' ||
                     substr($url, 0, 5) == 'xmpp:' ||
-                    substr($url, 0, 5) == 'facetime:'
+                    substr($url, 0, 4) == 'sip:' ||
+                    substr($url, 0, 4) == 'ssh:' ||
+                    substr($url, 0, 8) == 'spotify:' ||
+                    substr($url, 0, 8) == 'bitcoin:' ||
+                    substr($url, 0, 9) == 'facetime:'
                 )
                     ? $url
                     : 'http://' . $url;
@@ -410,6 +425,24 @@
                 $components = parse_url($this->getCurrentURL());
                 parse_str($components['query'], $url_var_array);
                 if (!empty($url_var_array[$variable_name])) unset($url_var_array[$variable_name]);
+                $components['query'] = http_build_query($url_var_array);
+                $url                 = $components['scheme'] . '://' . $components['host'] . $components['path'];
+                if (!empty($components['query'])) $url .= '?' . $components['query'];
+
+                return $url;
+            }
+
+            /**
+             * Returns a version of the current page URL with the specified URL variable set to the specified value
+             * @param $variable_name
+             * @param $value
+             * @return string
+             */
+            function getCurrentURLWithVar($variable_name, $value)
+            {
+                $components = parse_url($this->getCurrentURL());
+                parse_str($components['query'], $url_var_array);
+                $url_var_array[$variable_name] = $value;
                 $components['query'] = http_build_query($url_var_array);
                 $url                 = $components['scheme'] . '://' . $components['host'] . $components['path'];
                 if (!empty($components['query'])) $url .= '?' . $components['query'];

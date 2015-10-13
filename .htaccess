@@ -1,5 +1,4 @@
 # Known .htaccess file
-# If these settings don't work for you, we recommend copying htaccess-2.4.dist instead.
 
 <IfModule mod_rewrite.c>
     RewriteEngine on
@@ -23,7 +22,19 @@
   Order allow,deny
   Deny from all
 </Files>
+<Files ~ "known\.php">
+  Order allow,deny
+  Deny from all
+</Files>
+<Files  ~ "\.known">
+  Order allow,deny
+  Deny from all
+</Files>
 <Files  ~ "\.ini$">
+  Order allow,deny
+  Deny from all
+</Files>
+<Files ~ "\.yml$">
   Order allow,deny
   Deny from all
 </Files>
@@ -32,6 +43,14 @@
   Deny from all
 </Files>
 <Files ~ "sitemap.xml">
+  Order allow,deny
+  Allow from all
+</Files>
+<Files ~ "feed\.xml">
+  Order allow,deny
+  Allow from all
+</Files>
+<Files ~ "rss\.xml">
   Order allow,deny
   Allow from all
 </Files>
