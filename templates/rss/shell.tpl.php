@@ -11,6 +11,12 @@
         }
     }
 
+    if (empty($vars['base_url'])) {
+        $base_url = $this->getCurrentURLWithoutVar('_t');
+    } else {
+        $base_url = $this->getURLWithoutVar($vars['base_url'], '_t');
+    }
+
     $page = new DOMDocument();
     $page->formatOutput = true;
     $rss = $page->createElement('rss');
@@ -22,18 +28,28 @@
     $rss->setAttribute('xmlns:itunes', 'http://www.itunes.com/dtds/podcast-1.0.dtd');
     $channel = $page->createElement('channel');
     $channel->appendChild($page->createElement('title',$vars['title']));
-    if (!empty(\Idno\Core\site()->config()->description)) {
+    if (!empty(\Idno\Core\Idno::site()->config()->description)) {
         $site_description = $page->createElement('description');
-        $site_description->appendChild($page->createCDATASection(\Idno\Core\site()->config()->description));
+        if (empty($vars['nocdata'])) {
+            $site_description->appendChild($page->createCDATASection(\Idno\Core\Idno::site()->config()->description));
+        } else {
+            //$site_description->appendChild((\Idno\Core\Idno::site()->config()->description));
+            $site_description->textContent = \Idno\Core\Idno::site()->config()->getDescription();
+        }
         $channel->appendChild($site_description);
         $site_description = $page->createElement('itunes:summary');
-        $site_description->appendChild($page->createCDATASection(\Idno\Core\site()->config()->description));
+        if (empty($vars['nocdata'])) {
+            $site_description->appendChild($page->createCDATASection(\Idno\Core\Idno::site()->config()->description));
+        } else {
+            //$site_description->appendChild((\Idno\Core\Idno::site()->config()->description));
+            $site_description->textContent = \Idno\Core\Idno::site()->config()->getDescription();
+        }
         $channel->appendChild($site_description);
     }
-    $channel->appendChild($page->createElement('link',$this->getCurrentURLWithoutVar('_t')));
-    if (!empty(\Idno\Core\site()->config()->hub)) {
+    $channel->appendChild($page->createElement('link', htmlspecialchars($base_url)));
+    if (!empty(\Idno\Core\Idno::site()->config()->hub)) {
         $pubsub = $page->createElement('atom:link');
-        $pubsub->setAttribute('href',\Idno\Core\site()->config()->hub);
+        $pubsub->setAttribute('href',\Idno\Core\Idno::site()->config()->hub);
         $pubsub->setAttribute('rel', 'hub');
         $channel->appendChild($pubsub);
     }
@@ -52,9 +68,6 @@
     // If we have a feed, add the items
     if (!empty($vars['items'])) {
         foreach($vars['items'] as $item) {
-            if ($item instanceof \Idno\Entities\ActivityStreamPost) {
-                $item = $item->getObject();
-            }
             if (!($item instanceof \Idno\Common\Entity)) {
                 continue;
             }
@@ -71,13 +84,22 @@
             $rssItem->appendChild($page->createElement('link',$item->getSyndicationURL()));
             $rssItem->appendChild($page->createElement('guid',$item->getUUID()));
             $rssItem->appendChild($page->createElement('pubDate',date(DATE_RSS,$item->created)));
-            
+
             $owner = $item->getOwner();
             $rssItem->appendChild($page->createElement('author', "{$owner->title}"));
             //$rssItem->appendChild($page->createElement('dc:creator', $owner->title));
-            
+
             $description = $page->createElement('description');
-            $description->appendChild($page->createCDATASection($item->draw(true)));
+            if (empty($vars['nocdata'])) {
+                $description->appendChild($page->createCDATASection($item->draw(true)));
+            } else {
+                //$description->appendChild($page->create($item->draw(true)));
+                //$description->textContent = $item->draw(true);
+                $tpl = new \DOMDocument;
+                $tpl->loadHtml($item->draw(true), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                //$body->appendChild($dom->importNode($tpl->documentElement, TRUE));
+                $description->appendChild($page->importNode($tpl->documentElement, true));
+            }
             $rssItem->appendChild($description);
             if (!empty($item->lat) && !empty($item->long)) {
                 $rssItem->appendChild($page->createElement('geo:lat', $item->lat));
@@ -88,7 +110,7 @@
              *
                 $webmentionItem = $page->createElement('atom:link');
                 $webmentionItem->setAttribute('rel', 'webmention');
-                $webmentionItem->setAttribute('href', \Idno\Core\site()->config()->getDisplayURL() . 'webmention/');
+                $webmentionItem->setAttribute('href', \Idno\Core\Idno::site()->config()->getDisplayURL() . 'webmention/');
                 $rssItem->appendChild($webmentionItem);
             */
             if ($attachments = $item->getAttachments()) {

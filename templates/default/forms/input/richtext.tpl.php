@@ -1,6 +1,10 @@
 <?php
 
-    $unique_id = 'body' . rand(0,9999);
+    if (!empty($vars['unique_id'])) {
+	    $unique_id = $vars['unique_id'];
+    } else {
+	    $unique_id = 'body' . rand(0,9999);
+    }
     if (!empty($vars['class'])) {
         $class = $vars['class'];
     } else {
@@ -15,6 +19,11 @@
         $placeholder = $vars['placeholder'];
     } else {
         $placeholder = 'Tell your story';
+    }
+    if (!empty($vars['value'])) {
+        $value = $this->autop($vars['value']);
+    } else {
+        $value = '';
     }
 
 ?>
@@ -33,9 +42,9 @@
     }
 
 ?>
-    <br clear="all">
+    <br class="clearall">
     <textarea name="<?=$vars['name']?>"  placeholder="<?=htmlspecialchars($placeholder);?>" style="height:<?=$height?>px"
-          class="bodyInput mentionable wysiwyg form-control <?=$class?>" id="<?=$unique_id?>"><?= (htmlspecialchars($this->autop($vars['value']))) ?></textarea>
+          class="bodyInput mentionable wysiwyg form-control <?=$class?>" id="<?=$unique_id?>"><?= (htmlspecialchars($value)) ?></textarea>
 
 <?php
 
@@ -127,8 +136,8 @@
     function filePickerDialog(callback, value, meta) {
         tinymce.activeEditor.windowManager.open({
             title: 'File Manager',
-            //url: '<?=\Idno\Core\site()->config()->getDisplayURL()?>filepicker/?type=' + meta.filetype,
-            url: '<?=\Idno\Core\site()->config()->getDisplayURL()?>filepicker/?type=image',
+            //url: '<?=\Idno\Core\Idno::site()->config()->getDisplayURL()?>filepicker/?type=' + meta.filetype,
+            url: '<?=\Idno\Core\Idno::site()->config()->getDisplayURL()?>filepicker/?type=image',
             width: 650,
             height: 550
         }, {
@@ -137,8 +146,4 @@
             }
         });
     }
-
-    // Autosave the title & body
-    autoSave('entry', ['title', '<?=$vars['name']?>']);
-
 </script>

@@ -25,6 +25,15 @@
 
                 $thumbnail = false;
 
+                // Rotate image where appropriate
+                if (is_callable('exif_read_data')) {
+                    try {
+                        if ($exif = exif_read_data($file_path)) {
+                            if (!empty($exif['Orientation'])) $orientation = $exif['Orientation'];
+                        }
+                    } catch (\Exception $e) {}
+                }
+
                 if ($photo_information = getimagesize($file_path)) {
                     if ($photo_information[0] > $max_dimension || $photo_information[1] > $max_dimension) {
                         switch ($photo_information['mime']) {
@@ -43,28 +52,43 @@
                                 break;
                         }
                         if (!empty($image)) {
-                            if ($photo_information[0] > $photo_information[1]) {
+                            if (isset($orientation)) {
+                                switch ($orientation) {
+                                    case 8:
+                                        $image = imagerotate($image, 90, 0);
+                                        break;
+                                    case 3:
+                                        $image = imagerotate($image, 180, 0);
+                                        break;
+                                    case 6:
+                                        $image = imagerotate($image, -90, 0);
+                                        break;
+                                }
+                            }
+                            $existing_width = imagesx($image);
+                            $existing_height = imagesy($image);
+                            if ($existing_width > $existing_height) {
                                 $width  = $max_dimension;
-                                $height = round($photo_information[1] * ($max_dimension / $photo_information[0]));
+                                $height = round($existing_height * ($max_dimension / $existing_width));
                             } else {
                                 $height = $max_dimension;
-                                $width  = round($photo_information[0] * ($max_dimension / $photo_information[1]));
+                                $width  = round($existing_width * ($max_dimension / $existing_height));
                             }
                             if ($square) {
                                 if ($width > $height) {
                                     $new_height      = $max_dimension;
                                     $new_width       = $max_dimension;
-                                    $original_height = $photo_information[1];
-                                    $original_width  = $photo_information[1];
-                                    $offset_x        = round(($photo_information[0] - $photo_information[1]) / 2);
+                                    $original_height = $existing_height;
+                                    $original_width  = $existing_height;
+                                    $offset_x        = round(($existing_width - $existing_height) / 2);
                                     $offset_y        = 0;
                                 } else {
                                     $new_height      = $max_dimension;
                                     $new_width       = $max_dimension;
-                                    $original_height = $photo_information[0];
-                                    $original_width  = $photo_information[0];
+                                    $original_height = $existing_width;
+                                    $original_width  = $existing_width;
                                     $offset_x        = 0;
-                                    $offset_y        = round(($photo_information[1] - $photo_information[0]) / 2);
+                                    $offset_y        = round(($existing_height - $existing_width) / 2);
                                 }
                             } else {
                                 $new_height      = $height;
@@ -78,7 +102,6 @@
                             imagealphablending($image_copy, false);
                             imagesavealpha($image_copy, true);
                             imagecopyresampled($image_copy, $image, 0, 0, $offset_x, $offset_y, $new_width, $new_height, $original_width, $original_height);
-
 
                             $tmp_dir = dirname($file_path);
                             switch ($photo_information['mime']) {
@@ -123,7 +146,7 @@
             public static function createFromFile($file_path, $filename, $mime_type = 'application/octet-stream', $return_object = false, $destroy_exif = false)
             {
                 if (file_exists($file_path) && !empty($filename)) {
-                    if ($fs = \Idno\Core\site()->filesystem()) {
+                    if ($fs = \Idno\Core\Idno::site()->filesystem()) {
                         $file     = new File();
                         $metadata = array(
                             'filename'  => $filename,
@@ -147,24 +170,28 @@
                                     $image = imagecreatefromjpeg($tmpfname);
 
                                     // Since we're stripping Exif, we need to manually adjust orientation of main image
-                                    if (function_exists('exif_read_data')) {
-                                        $exif = exif_read_data($tmpfname);
-                                        if (!empty($exif['Orientation'])) {
-                                            switch ($exif['Orientation']) {
-                                                case 8:
-                                                    $image = imagerotate($image, 90, 0);
-                                                    break;
-                                                case 3:
-                                                    $image = imagerotate($image, 180, 0);
-                                                    break;
-                                                case 6:
-                                                    $image = imagerotate($image, -90, 0);
-                                                    break;
+                                    try {
+                                        if (function_exists('exif_read_data')) {
+
+                                            $exif = exif_read_data($tmpfname);
+                                            if (!empty($exif['Orientation'])) {
+                                                switch ($exif['Orientation']) {
+                                                    case 8:
+                                                        $image = imagerotate($image, 90, 0);
+                                                        break;
+                                                    case 3:
+                                                        $image = imagerotate($image, 180, 0);
+                                                        break;
+                                                    case 6:
+                                                        $image = imagerotate($image, -90, 0);
+                                                        break;
+                                                }
                                             }
                                         }
-                                    }
 
-                                    imagejpeg($image, $tmpfname);
+                                        imagejpeg($image, $tmpfname);
+                                    } catch (\Exception $e) {
+                                    }
                                     break;
                             }
 
@@ -198,6 +225,24 @@
             }
 
             /**
+             * Retrieve a file by ID
+             * @param string $id
+             * @return \Idno\Common\Entity|\MongoGridFSFile|null
+             */
+            static function getByID($id)
+            {
+                if ($fs = \Idno\Core\Idno::site()->filesystem()) {
+                    try {
+                        return $fs->findOne(array('_id' => \Idno\Core\Idno::site()->db()->processID($id)));
+                    } catch (\Exception $e) {
+                        \Idno\Core\Idno::site()->logging->error($e->getMessage());
+                    }
+                }
+
+                return false;
+            }
+
+            /**
              * Given a file and an original file path, determines whether this file is an SVG
              * @param $file_path
              * @return bool
@@ -212,31 +257,13 @@
             }
 
             /**
-             * Retrieve a file by ID
-             * @param string $id
-             * @return \Idno\Common\Entity|\MongoGridFSFile|null
-             */
-            static function getByID($id)
-            {
-                if ($fs = \Idno\Core\site()->filesystem()) {
-                    try {
-                        return $fs->findOne(array('_id' => \Idno\Core\site()->db()->processID($id)));
-                    } catch (\Exception $e) {
-                        \Idno\Core\site()->logging->log($e->getMessage(), LOGLEVEL_ERROR);
-                    }
-                }
-
-                return false;
-            }
-
-            /**
              * Retrieve a file by UUID
              * @param string $uuid
              * @return bool|\Idno\Common\Entity
              */
             static function getByUUID($uuid)
             {
-                if ($fs = \Idno\Core\site()->filesystem()) {
+                if ($fs = \Idno\Core\Idno::site()->filesystem()) {
                     return $fs->findOne($uuid);
                 }
 
@@ -251,8 +278,8 @@
              */
             static function getByURL($url)
             {
-                if (substr_count($url, \Idno\Core\site()->config()->getDisplayURL() . 'file/')) {
-                    $url = str_replace(\Idno\Core\site()->config()->getDisplayURL() . 'file/', '', $url);
+                if (substr_count($url, \Idno\Core\Idno::site()->config()->getDisplayURL() . 'file/')) {
+                    $url = str_replace(\Idno\Core\Idno::site()->config()->getDisplayURL() . 'file/', '', $url);
 
                     return self::getByID($url);
                 }
@@ -267,37 +294,37 @@
              */
             static function getFileDataFromAttachment($attachment)
             {
-                \Idno\Core\site()->logging->log(json_encode($attachment), LOGLEVEL_DEBUG);
+                \Idno\Core\Idno::site()->logging->debug("getting file data from attachment", ['attachment' => $attachment]);
                 if (!empty($attachment['_id'])) {
-                    //\Idno\Core\site()->logging->log("Checking attachment ID", LOGLEVEL_DEBUG);
+                    //\Idno\Core\Idno::site()->logging->debug("Checking attachment ID");
                     if ($bytes = self::getFileDataByID((string)$attachment['_id'])) {
-                        //\Idno\Core\site()->logging->log("Retrieved some bytes", LOGLEVEL_DEBUG);
+                        //\Idno\Core\Idno::site()->logging->debug("Retrieved some bytes");
                         if (strlen($bytes)) {
-                            //\Idno\Core\site()->logging->log("Bytes! " . $bytes, LOGLEVEL_DEBUG);
+                            //\Idno\Core\Idno::site()->logging->debug("Bytes! " . $bytes);
                             return $bytes;
                         } else {
-                            //\Idno\Core\site()->logging->log("Sadly no bytes", LOGLEVEL_DEBUG);
+                            //\Idno\Core\Idno::site()->logging->debug("Sadly no bytes");
                         }
                     } else {
-                        //\Idno\Core\site()->logging->log("No bytes retrieved", LOGLEVEL_DEBUG);
+                        //\Idno\Core\Idno::site()->logging->debug("No bytes retrieved");
                     }
                 } else {
-                    \Idno\Core\site()->logging->log("Empty attachment _id", LOGLEVEL_DEBUG);
+                    \Idno\Core\Idno::site()->logging->debug("Empty attachment _id");
                 }
                 if (!empty($attachment['url'])) {
                     try {
                         if ($bytes = @file_get_contents($attachment['url'])) {
-                            \Idno\Core\site()->logging->log("Returning bytes", LOGLEVEL_DEBUG);
+                            \Idno\Core\Idno::site()->logging->debug("Returning bytes");
 
                             return $bytes;
                         } else {
-                            \Idno\Core\site()->logging->log("Couldn't get bytes from " . $attachment['url'], LOGLEVEL_DEBUG);
+                            \Idno\Core\Idno::site()->logging->debug("Couldn't get bytes from " . $attachment['url']);
                         }
                     } catch (\Exception $e) {
-                        \Idno\Core\site()->logging->log("Couldn't get bytes from " . $attachment['url'], LOGLEVEL_DEBUG);
+                        \Idno\Core\Idno::site()->logging->debug("Couldn't get bytes from " . $attachment['url']);
                     }
                 } else {
-                    \Idno\Core\site()->logging->log('Attachment url was empty ' . $attachment['url'], LOGLEVEL_DEBUG);
+                    \Idno\Core\Idno::site()->logging->debug('Attachment url was empty ' . $attachment['url']);
                 }
 
                 return false;
@@ -314,7 +341,7 @@
                     try {
                         return $file->getBytes();
                     } catch (\Exception $e) {
-                        \Idno\Core\site()->logging->log($e->getMessage(), LOGLEVEL_ERROR);
+                        \Idno\Core\Idno::site()->logging->error($e->getMessage());
                     }
                 }
 
@@ -342,7 +369,7 @@
             function getURL()
             {
                 if (!empty($this->_id)) {
-                    return \Idno\Core\site()->config()->url . 'file/' . $this->_id . '/' . urlencode($this->filename);
+                    return \Idno\Core\Idno::site()->config()->url . 'file/' . $this->_id . '/' . urlencode($this->filename);
                 }
 
                 return '';

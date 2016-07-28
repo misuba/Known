@@ -29,7 +29,7 @@
                     return $this->canonical;
                 }
                 if (!($this->getSlug()) && ($this->getID())) {
-                    return \Idno\Core\site()->config()->url . 'bookmark/' . $this->getID() . '/' . $this->getPrettyURLTitle();
+                    return \Idno\Core\Idno::site()->config()->url . 'bookmark/' . $this->getID() . '/' . $this->getPrettyURLTitle();
                 } else {
                     return parent::getURL();
                 }
@@ -59,8 +59,9 @@
             function getTitleFromURL($Url){
                 $str = \Idno\Core\Webservice::file_get_contents($Url);
                 if(strlen($str) > 0){
-                    preg_match("/\<title\>(.*)\<\/title\>/siuU",$str,$title);
-                    return htmlspecialchars_decode($title[1]);
+                    if ($result = preg_match("/\<title\>(.*)\<\/title\>/siu",$str,$title)) {
+                        return htmlspecialchars_decode($title[1]);
+                    }
                 }
                 return '';
             }
@@ -76,15 +77,15 @@
                 } else {
                     $new = false;
                 }
-                $body = \Idno\Core\site()->currentPage()->getInput('body');
-                $description = \Idno\Core\site()->currentPage()->getInput('description');
-                $tags = \Idno\Core\site()->currentPage()->getInput('tags');
-                $title = \Idno\Core\site()->currentPage()->getInput('title');
-                $access = \Idno\Core\site()->currentPage()->getInput('access');
-                $likeof = \Idno\Core\site()->currentPage()->getInput('like-of');
-                $repostof = \Idno\Core\site()->currentPage()->getInput('repost-of');
+                $body = \Idno\Core\Idno::site()->currentPage()->getInput('body');
+                $description = \Idno\Core\Idno::site()->currentPage()->getInput('description');
+                $tags = \Idno\Core\Idno::site()->currentPage()->getInput('tags');
+                $title = \Idno\Core\Idno::site()->currentPage()->getInput('title');
+                $access = \Idno\Core\Idno::site()->currentPage()->getInput('access');
+                $likeof = \Idno\Core\Idno::site()->currentPage()->getInput('like-of');
+                $repostof = \Idno\Core\Idno::site()->currentPage()->getInput('repost-of');
 
-                if ($time = \Idno\Core\site()->currentPage()->getInput('created')) {
+                if ($time = \Idno\Core\Idno::site()->currentPage()->getInput('created')) {
                     if ($time = strtotime($time)) {
                         $this->created = $time;
                     }
@@ -115,27 +116,32 @@
                         }
                         if (empty($title)) {
                             error_log("No title");
-                            \Idno\Core\site()->session()->addErrorMessage('You need to specify a title.');
+                            \Idno\Core\Idno::site()->session()->addErrorMessage('You need to specify a title.');
                             return false;
                         }
                         $this->setAccess($access);
-                        if ($this->save($new)) {
+                        if ($this->publish($new)) {
+                            if ($this->getAccess() == 'PUBLIC') {
+                                \Idno\Core\Webmention::pingMentions($this->getURL(), \Idno\Core\Idno::site()->template()->parseURLs($this->getDescription()));
+                            }
                             return true;
                         }
                     } else {
                         error_log("No URL");
-                        \Idno\Core\site()->session()->addErrorMessage('You can\'t bookmark an empty URL.');
+                        \Idno\Core\Idno::site()->session()->addErrorMessage('You can\'t bookmark an empty URL.');
                     }
                 } else {
                     error_log("Invalid URL");
-                    \Idno\Core\site()->session()->addErrorMessage('That doesn\'t look like a valid URL.');
+                    \Idno\Core\Idno::site()->session()->addErrorMessage('That doesn\'t look like a valid URL.');
                 }
                 return false;
 
             }
 
             function deleteData() {
-                \Idno\Core\Webmention::pingMentions($this->getURL(), \Idno\Core\site()->template()->parseURLs($this->getDescription()));
+                if ($this->getAccess() == 'PUBLIC') {
+                    \Idno\Core\Webmention::pingMentions($this->getURL(), \Idno\Core\Idno::site()->template()->parseURLs($this->getDescription()));
+                }
             }
 
         }

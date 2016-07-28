@@ -26,7 +26,7 @@
                 ?>
                 <label>
                     <span class="btn btn-primary btn-file">
-                        <i class="fa fa-play-circle"></i> <span id="media-filename">Upload media</span> <input type="file" name="media" id="media" class="col-md-9" accept="audio/*;video/*;capture=audio" onchange="$('#media-filename').html($(this).val())" />
+                        <i class="fa fa-play-circle"></i> <span id="media-filename">Upload audio</span> <input type="file" name="media" id="media" class="col-md-9" accept="audio/*;video/*;capture=microphone" onchange="$('#media-filename').html($(this).val())" />
                     </span>
                 </label>
                 <?php
@@ -44,8 +44,7 @@
 
             <?= $this->__([
                 'name' => 'body',
-                'value' => $body,
-                'object' => $object,
+                'value' => $vars['object']->body,
                 'wordcount' => false,
                 'height' => 250,
                 'class' => 'wysiwyg-short',
@@ -53,11 +52,11 @@
                 'label' => 'Description',
             ])->draw('forms/input/richtext')?>
             <?=$this->draw('entity/tags/input');?>
-            <?php if (empty($vars['object']->_id)) echo $this->drawSyndication('media'); ?>
-            <?php if (empty($vars['object']->_id)) { ?><input type="hidden" name="forward-to" value="<?= \Idno\Core\site()->config()->getDisplayURL() . 'content/all/'; ?>" /><?php } ?>
+            <?php echo $this->drawSyndication('media', $vars['object']->getPosseLinks()); ?>
+            <?php if (empty($vars['object']->_id)) { ?><input type="hidden" name="forward-to" value="<?= \Idno\Core\Idno::site()->config()->getDisplayURL() . 'content/all/'; ?>" /><?php } ?>
             <?= $this->draw('content/access'); ?>
             <p class="button-bar ">
-                <?= \Idno\Core\site()->actions()->signForm('/media/edit') ?>
+                <?= \Idno\Core\Idno::site()->actions()->signForm('/media/edit') ?>
                 <input type="button" class="btn btn-cancel" value="Cancel" onclick="hideContentCreateForm();" />
                 <input type="submit" class="btn btn-primary" value="Publish" />
 

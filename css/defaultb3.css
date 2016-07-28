@@ -41,6 +41,7 @@
 .navbar {
 	box-shadow: 0 1px 10px rgba(0, 0, 0, 0.1);
 	border-radius: 0px;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 .navbar-default .navbar-brand {
@@ -62,12 +63,16 @@
 
 .navbar-nav > li > .nav > li > a {
     color: #333;
-    padding-bottom: 15px;
-    padding-top: 15px;
+   /* padding-bottom: 15px;
+    padding-top: 15px;*/
 }
 
 .navbar-nav > li > .nav > li > a:hover, .navbar-nav > li > .nav > li > a:focus  {
     color: #666;
+}
+.navbar-nav > li > a {
+	padding-bottom: 10px;
+	padding-top: 10px;
 }
 
 @media (min-width:837px) {
@@ -142,7 +147,7 @@ textarea.wysiwyg {
     height: 15em;
 }
 textarea.wysiwyg-short {
-    height: 4em !important;
+    /*height: 4em !important;*/
 }
 
 textarea.bodyInput {
@@ -361,6 +366,7 @@ select, input[type="file"] {
 }
 .dropdown-menu {
 	border-radius: 0px;
+	border-top: none;
 }
 .user-tbl img {
 	 width: 40px;
@@ -377,6 +383,25 @@ p.user-tbl {
 }
 .annotate-icon {
 	margin-left: 15px;
+}
+.navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:focus, .navbar-default .navbar-nav > .open > a:hover {
+	background-color: transparent;
+}
+.nav .open > a, .nav .open > a:focus, .nav .open > a:hover {
+	background-color: transparent;
+}
+.form-control.mentionable {
+	margin-bottom: 1em;
+}
+.edit-page-actions {
+	text-align: right;
+}
+.page-action {
+	padding-left: 2em;
+}
+.page-action [class^="fa fa-"], .page-action [class*=" fa fa-"] {
+    width: 1.5em;
+    text-align: left;
 }
 
 

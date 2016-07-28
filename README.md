@@ -1,6 +1,6 @@
-#Known: create a single site for all your content
+#Known: a social group platform
 
-![Known - A publishing platform for everyone](https://withknown.com/img/home/screens.png)
+![Known - A social group platform](https://withknown.com/img/home/screens.png)
 
 ##Installation [![Build Status](https://travis-ci.org/idno/Known.svg?branch=master)](https://travis-ci.org/idno/Known)
 
@@ -9,11 +9,8 @@
 A fully-managed hosted service is provided at <https://withknown.com/>. It is always kept up to date with the latest
 version of Known.
 
-Exclusive web hosting sponsor:
-
-[![DreamHost](https://withknown.com/img/sponsor_dh_small.jpg)](http://dreamhost.com/redir.cgi?promo=known595&url=promo/hosting595/&utm_source=known&utm_medium=banner&utm_content=sponsorshared595&utm_campaign=shared)
-
-We've tested DreamHost's hosting platform and highly recommend it for supporting your Known site.
+If you want to install on your own web space, we recommend [Reclaim Hosting](https://portal.reclaimhosting.com/aff.php?aff=013),
+which includes one-click Known installation.
 
 ###Installing
 
@@ -62,7 +59,6 @@ Third party libraries are licensed separately.
 ###Known also contains
 
 * Twitter Bootstrap, which is distributed under the Apache 2.0 license. Source: https://github.com/twitter/bootstrap
-* Bonita, which is distributed under the Apache 2.0 license. Source: https://github.com/benwerd/bonita
 * jQuery, which is distributed under the MIT License. Source: https://github.com/jquery/jquery
 * Portions of Symfony, which is distributed under the MIT license.
  * ClassLoader. Source: https://github.com/symfony/ClassLoader
@@ -71,22 +67,23 @@ Third party libraries are licensed separately.
 * ToroPHP, which is distributed under the MIT License. Source: https://github.com/anandkunal/ToroPHP/
 * Anthony Ferrara's PHP 5.5 password API shim, which is distributed under the MIT license. Source: https://github.com/ircmaxell/password_compat
 * Font Awesome, which is distributed under the Open Font License, version 1.1: http://fortawesome.github.io/Font-Awesome/
-* Fontello, for generating open source webfont. Source: https://github.com/fontello/fontello
+* Fontello, which is distributed under the MIT License, for generating open source webfont. Source: https://github.com/fontello/fontello
 * Steve Clay's AutoP, which is distributed under the MIT License. Source: https://code.google.com/p/mrclay/
 * Aaron Parecki's Webmention Client, which is distributed under the Apache 2.0 license. Source: https://github.com/aaronpk/mention-client
 * Barnaby Walters's Microformats 2 Parser, which is distributed under the MIT License. Source: https://github.com/indieweb/php-mf2
 * Webignition URL libraries, which are distributed under the MIT license.
  * Absolute URL deriver. Source: https://github.com/webignition/absolute-url-deriver
  * URL. Source: https://github.com/webignition/url
-* FitVids.js: http://fitvidsjs.com/
-* Leaflet.js: http://leafletjs.com/ (License: https://github.com/Leaflet/Leaflet/blob/master/LICENSE)
+* FitVids.js, which is distributed under the WTFPL License. Source: http://fitvidsjs.com/
+* Leaflet.js, which is distributed under the BSD 2-Clause License. Source: http://leafletjs.com/ 
 * H5f HTML5 Form shim, which is distributed under the MIT License. Source: https://github.com/ryanseddon/H5F
 * SwiftMailer, which is distributed under the MIT License. Source: https://github.com/swiftmailer/swiftmailer
 * Antwort, an email template which is distributed under the MIT License. Source: https://github.com/internations/antwort
 * Mention.js, a Bootstrap user at-mention library, which is distributed under the MIT License. Source: https://github.com/jakiestfu/Mention.js
 * MediaElement.js, a cross-browser media player, which is distributed under the MIT License. Source: https://github.com/johndyer/mediaelement
-* Simplepie, a feed parser, which is distributed under the BSD license. Source: https://github.com/simplepie/simplepie/
+* Simplepie, a feed parser, which is distributed under the BSD 3-Clause License. Source: https://github.com/simplepie/simplepie/
 * Bootstrap Toggle, which is distributed under the MIT License. Source: http://www.bootstraptoggle.com/
-* TinyMCE, a rich text editor, which is distributed under the AGPL License. Source: https://github.com/tinymce/tinymce
-* The Paypal Bootstrap Accessibility Plugin, which is distributed under the BSD License. Source: https://github.com/paypal/bootstrap-accessibility-plugin
+* TinyMCE, a rich text editor, which is distributed under the LGPL License. Source: https://github.com/tinymce/tinymce
+* The Paypal Bootstrap Accessibility Plugin, which is distributed under the BSD 3-Clause License. Source: https://github.com/paypal/bootstrap-accessibility-plugin
 * HTMLPurifier, which is distributed under the LGPL License. Source: http://htmlpurifier.org
+* Wavesurfer, which is distrubuted under a Creative Commons Attribution 3.0 Unported License. Source: https://github.com/katspaugh/wavesurfer.js

@@ -9,6 +9,11 @@
     RewriteRule ^(.*)$ - [ENV=BASE:%2]
 
     RewriteRule ^js/canary\.js$ %{ENV:BASE}/js/default.js [L]
+
+    # The query string cache trick doesn't really work, so use rewrite rules instead
+    RewriteRule ^js/[0-9]+/(.*)$ %{ENV:BASE}/js/$1 [L]    
+    RewriteRule ^css/[0-9]+/(.*)$ %{ENV:BASE}/css/$1 [L]    
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ %{ENV:BASE}/index.php?/$1 [L,QSA]
@@ -42,7 +47,7 @@
   Order allow,deny
   Deny from all
 </Files>
-<Files ~ "sitemap.xml">
+<Files ~ "sitemap\.xml">
   Order allow,deny
   Allow from all
 </Files>
@@ -54,6 +59,31 @@
   Order allow,deny
   Allow from all
 </Files>
+#<Files ~ "\.php$">
+#  Order allow,deny
+#  Deny from all
+#</Files>
+<Files ~ "warmup\/*\.*">
+  Order allow,deny
+  Allow from all
+</Files>
+<Files ~ "index\.php">
+  Order allow,deny
+  Allow from all
+</Files>
+
+<IfModule mod_headers.c>
+# cache images and flash content for one day
+<FilesMatch ".(flv|gif|jpg|jpeg|png|ico|swf)$">
+Header set Cache-Control "max-age=86400"
+</FilesMatch>
+
+# cache text, css, and javascript files for one day
+<FilesMatch ".(js|css|pdf|txt)$">
+Header set Cache-Control "max-age=86400"
+</FilesMatch>
+</IfModule>
+
 
 AddType video/ogg .ogv
 AddType video/mp4 .mp4
