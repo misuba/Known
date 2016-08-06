@@ -23,17 +23,18 @@
                         ))->draw('stream/home')
                     ))->drawPage();
 
-                } else {
-                    // show error message
-                    $t = \Idno\Core\site()->template();
-                    $t->__(array(
-                        'title' => 'Stream',
-                        'messages' => array(
-                            'Nothing found. Perhaps you\'d like to follow someone? or have a better uuid'
-                        ),
-                        'body' => ''
-                    ))->drawPage();
                 }
+                // else {
+                //     // show error message
+                //     $t = \Idno\Core\site()->template();
+                //     $t->__(array(
+                //         'title' => 'Stream',
+                //         'messages' => array(
+                //             'Nothing found. Perhaps you\'d like to follow someone? or have a better uuid'
+                //         ),
+                //         'body' => ''
+                //     ))->drawPage();
+                // }
 
             }
 
