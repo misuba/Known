@@ -9,8 +9,10 @@
 
             function getContent()
             {
-
-                if ($items = FeedItem::get()) {
+                $this->gatekeeper();
+                if ($items = FeedItem::get(array(
+                    'owner' => \Idno\Core\site()->session()->currentUserUUID()
+                ))) {
 
                     $t = \Idno\Core\site()->template();
                     $t->__(array(
