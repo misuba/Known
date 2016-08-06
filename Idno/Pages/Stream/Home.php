@@ -22,6 +22,14 @@
                         ))->draw('stream/home')
                     ))->drawPage();
 
+                } else {
+                    // show error message
+                    $t = \Idno\Core\site()->template();
+                    $t->__(array(
+                        'messages' => array(
+                            'Nothing found. Perhaps you\'d like to follow someone? or have a better uuid'
+                        )
+                    ))->drawPage();
                 }
 
             }
