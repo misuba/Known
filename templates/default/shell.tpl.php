@@ -157,7 +157,7 @@
             padding-top: 100px; /* 60px to make the container go all the way to the bottom of the topbar */
         }
     </style>
-    
+
     <?=$this->draw('shell/css');?>
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
@@ -344,6 +344,9 @@
     }
     // Load javascript assets
     if ((\Idno\Core\site()->currentPage()) && $scripts = \Idno\Core\site()->currentPage->getAssets('javascript')) {
+        ?>
+        <!-- we have $scripts -->
+        <?php
         foreach ($scripts as $script) {
             ?>
             <script src="<?= $script ?>"></script>
@@ -396,7 +399,7 @@
             }
         });
     });
-    
+
     /**
      * Handle Soundcloud oEmbed code
      */
@@ -404,7 +407,7 @@
 	$('div.soundcloud-embed').each(function(index) {
 	    var url = $(this).attr('data-url');
 	    var div = $(this);
-	    
+
 	    $.getJSON('https://soundcloud.com/oembed?callback=?',
 		    {
 			format: 'js',
