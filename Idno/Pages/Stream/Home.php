@@ -9,8 +9,13 @@
 
             function getContent()
             {
+                $this->gatekeeper();
+                $this->setAsset('reader','javascript','/js/reader.js');
 
-                if ($items = FeedItem::get()) {
+                $items = FeedItem::get(array(
+                    'owner' => \Idno\Core\site()->session()->currentUserUUID()
+                ));
+                if (count($items)) {
 
                     $t = \Idno\Core\site()->template();
                     $t->__(array(
@@ -21,6 +26,17 @@
                     ))->drawPage();
 
                 }
+                // else {
+                //     // show error message
+                //     $t = \Idno\Core\site()->template();
+                //     $t->__(array(
+                //         'title' => 'Stream',
+                //         'messages' => array(
+                //             'Nothing found. Perhaps you\'d like to follow someone? or have a better uuid'
+                //         ),
+                //         'body' => ''
+                //     ))->drawPage();
+                // }
 
             }
 
