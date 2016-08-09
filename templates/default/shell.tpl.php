@@ -342,17 +342,6 @@
     if (\Idno\Core\site()->session()->isLoggedOn()) {
         echo $this->draw('js/mentions');
     }
-    // Load javascript assets
-    if ((\Idno\Core\site()->currentPage()) && $scripts = \Idno\Core\site()->currentPage->getAssets('javascript')) {
-        ?>
-        <!-- we have $scripts -->
-        <?php
-        foreach ($scripts as $script) {
-            ?>
-            <script src="<?= $script ?>"></script>
-        <?php
-        }
-    }
 ?>
 
 <!-- HTML5 form element support for legacy browsers -->
@@ -444,6 +433,20 @@
     })(document, window.navigator, 'standalone');
 
 </script>
+
+<?php
+    // Load javascript assets
+    if ((\Idno\Core\site()->currentPage())) {
+        $scripts = \Idno\Core\site()->currentPage->getAssets('javascript');
+        if (count($scripts)) {
+            foreach ($scripts as $script) {
+                ?>
+                <script src="<?= $script ?>"></script>
+            <?php
+            }
+        }
+    }
+?>
 
 <?= $this->draw('shell/footer', $vars) ?>
 

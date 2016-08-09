@@ -10,7 +10,7 @@
             function getContent()
             {
                 $this->gatekeeper();
-                $this->setAsset('reader','javascript','/js/reader.js');
+                $this->setAsset('reader','/js/reader.js','javascript');
 
                 $items = FeedItem::get(array(
                     'owner' => \Idno\Core\site()->session()->currentUserUUID()
